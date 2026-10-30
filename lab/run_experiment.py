@@ -15,6 +15,8 @@ import sys
 
 import labctl
 
+FULL_RUN_MIN_RUNS = 200
+
 
 def run_block(profile, args, run_dir):
     """Misst ein Profil und gibt die Kontrollwerte des Blocks zurück."""
@@ -43,7 +45,8 @@ def run_block(profile, args, run_dir):
     print(f"{profile['name']}: fertig ({started} bis {finished})", flush=True)
     return {"profile": profile["name"], "started_utc": started, "finished_utc": finished,
             "rtt_target_ms": profile["rtt_ms"], "loss_target_pct": profile["loss_pct"],
-            "netem_delay_ms": round(delay, 2), **ping, **delta}
+            "netem_delay_ms": round(delay, 2), "power_source": labctl.power_source(),
+            **ping, **delta}
 
 
 def main():
@@ -60,6 +63,8 @@ def main():
     run_dir = labctl.RAW_DIR / args.name
     if run_dir.exists():
         sys.exit(f"{run_dir} existiert schon. Rohdaten werden nicht überschrieben.")
+    if args.runs >= FULL_RUN_MIN_RUNS and labctl.power_source() == "Akku":
+        sys.exit("Vollmessung nur am Netzteil: Akkubetrieb ändert das Energieprofil der CPU.")
 
     labctl.keep_awake()
     labctl.start_testbed()
@@ -74,6 +79,7 @@ def main():
         "started_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "runs_per_cell": args.runs,
         "warmup_per_cell": args.warmup,
+        "git_commit": labctl.git_commit(),
         "seed": args.seed,
         "pause_ms": args.pause_ms,
         "profile_order": [p["name"] for p in profiles],

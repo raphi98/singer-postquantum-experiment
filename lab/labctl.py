@@ -143,6 +143,20 @@ def counter_delta(before, after):
     return {key: after[key] - before[key] for key in before}
 
 
+def power_source():
+    """Gibt die Stromquelle des Macs zurück, auf anderen Systemen "unbekannt"."""
+    if platform.system() != "Darwin":
+        return "unbekannt"
+    result = subprocess.run(["pmset", "-g", "batt"], capture_output=True, text=True, check=False)
+    return "Netzteil" if "AC Power" in result.stdout else "Akku"
+
+
+def git_commit():
+    result = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO_DIR,
+                            capture_output=True, text=True, check=False)
+    return result.stdout.strip()
+
+
 def collect_versions():
     """Hält Software- und Hardwarestände für das Manifest fest."""
     packages = {

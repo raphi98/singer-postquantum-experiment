@@ -134,6 +134,7 @@ private Schlüssel ist nur für dieses Labor gedacht.
 | Gruppen balanciert zufällig verschachtelt, Profilreihenfolge zufällig, Seed 20261111 | Drift durch Wärme oder Hintergrundlast trifft beide Gruppen gleich. Die Reihenfolge ist wiederholbar. |
 | Aufwärmläufe bleiben in der CSV (`phase=warmup`) | Sie werden erst in der Auswertung verworfen, der Ausschluss bleibt nachvollziehbar. |
 | pcaps in eigenen Läufen | tcpdump kostet CPU und soll die Zeitmessung nicht beeinflussen. |
+| Vollmessung nur am Netzteil, Stromquelle pro Block in `checks.csv` | Akkubetrieb ändert das Energieprofil der CPU, und ein Wechsel mitten im Lauf träfe die Profile ungleich. Das Skript verweigert den Start auf Akku. |
 
 ### Vorab festgelegte Auswertung
 
