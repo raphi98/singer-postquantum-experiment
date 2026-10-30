@@ -99,6 +99,7 @@ curl -sSL -o data/raw/scan/tranco/PYK6J/top1m.csv https://tranco-list.eu/downloa
 | Kontroll-Handshake vor jedem Test | „Nein“ ist nur gültig, wenn der Host sonst nachweislich antwortet. Eine Zeitüberschreitung ist etwas anderes als fehlende Unterstützung. |
 | Präferenz in beiden Reihenfolgen, je mit Key-Shares für beide Gruppen | Sonst ist Serverpräferenz nicht von bloßem Folgen des Clients zu trennen. Im Pilot folgten Akamai und Fastly dem Client, ein Einzeltest hätte eine Präferenz vorgetäuscht. Key-Shares für beide ersparen dem Server die Extra-Runde, er kann also frei wählen. |
 | Unklare Ergebnisse werden einmal wiederholt | Im Pilot brach `akbild.ac.at` beim ersten Versuch ab und unterstützte den Hybrid beim zweiten. Eine leere Ausgabe zählt nie als „nein“. |
+| Zweiter Durchgang am Ende für `dns_fehler`, `nicht_erreichbar`, `unklar` und `nein_abbruch` | Diese Ergebnisse kann auch ein Netz-Aussetzer erzeugen, ein `nein` ist dagegen eine Antwort des Servers. Der erste Vollscan scheiterte an einem solchen Aussetzer. Die Regel steht vor dem ersten Ergebnis fest, gilt für alle Hosts gleich, und es zählt der letzte Durchgang. |
 | Alle Handshakes eines Hosts gegen dieselbe IP | Die Hosting-Zuordnung gehört dann sicher zum getesteten Server. |
 | `www.` zuerst, sonst ohne | Dort landen Besucher. HTTP-Weiterleitungen dürfen wegen der Vorgabe „nur Handshakes“ nicht verfolgt werden, deshalb stehen im Rahmen die aktuellen Hauptadressen. |
 | Hosting aus CNAME und ASN, CNAME zuerst | Ein Akamai-Knoten im Netz eines Providers trägt dessen ASN. Die Zuordnung entsteht erst in der Auswertung aus `scan/hosting_rules.csv`, geänderte Regeln brauchen keinen neuen Scan. |
@@ -162,6 +163,7 @@ Laufende Liste, wird bei jedem Scan ergänzt.
 | Scan | Zweck | Status |
 |---|---|---|
 | `pilot-01` | 20 Hosts, 4 je Kategorie, Seed 1 | gültig, dient nur der Funktionsprüfung. Gezogen vor der Korrektur der Altdomains, enthält daher `tuwien.ac.at`. |
+| `aborted-full-01` | erster Start des Vollscans | an der Vorabprüfung gescheitert: zwei Zeitüberschreitungen gegen `pq.cloudflareresearch.com` um 10:03. Kein Host wurde gescannt. Danach 12 von 12 Handshakes erfolgreich, die Ursache blieb ungeklärt. |
 
 ## Offen
 

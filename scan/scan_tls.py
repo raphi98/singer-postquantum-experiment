@@ -34,6 +34,12 @@ MIN_SECONDS_PER_HOST = 1.0
 RETRY_PAUSE_S = 2.0
 # Diese Ergebnisse könnten vorübergehend sein und werden genau einmal wiederholt.
 RETRY_STATUSES = {"timeout", "unklar", "verbindung_abgebrochen"}
+# Diese Ergebnisse kann auch ein Netz-Aussetzer erzeugen, ein "nein" dagegen ist eine Serverantwort.
+# Solche Hosts werden am Ende einmal neu geprüft.
+SECOND_PASS_RESULTS = {"dns_fehler", "nicht_erreichbar", "unklar", "nein_abbruch"}
+SECOND_PASS_PAUSE_S = 30
+PREFLIGHT_ATTEMPTS = 3
+PREFLIGHT_PAUSE_S = 20
 
 PROBES = {
     "kontrolle": [],
@@ -43,7 +49,7 @@ PROBES = {
 }
 
 HOST_FIELDS = [
-    "started_utc", "domain", "kategorie", "quelle", "scanned_host", "www_fallback", "ip", "addresses",
+    "started_utc", "scan_pass", "domain", "kategorie", "quelle", "scanned_host", "www_fallback", "ip", "addresses",
     "cnames", "asn", "as_prefix", "as_country", "as_name", "tls_version", "pq_result", "preference",
     "cert_verified", "inconsistent",
 ]
@@ -229,14 +235,32 @@ def preflight(writer):
     Prüfung gegen den CA-Store des Containers schlägt fehl.
     """
     host = "pq.cloudflareresearch.com"
-    _, addresses = resolve(host)
-    if not addresses:
-        sys.exit(f"Vorabprüfung: {host} nicht auflösbar. Stimmt die Netzverbindung?")
-    hybrid = probe("vorabpruefung", host, addresses[0], "nur_hybrid", writer)
-    if hybrid["group"] != HYBRID or not hybrid["cert_verified"]:
-        sys.exit(f"Vorabprüfung fehlgeschlagen ({hybrid}). Scan abgebrochen: "
-                 "Das Netz verfälscht TLS oder der Scanner arbeitet nicht korrekt.")
-    print(f"Vorabprüfung bestanden: {host} verhandelt {hybrid['group']}", flush=True)
+    for _ in range(PREFLIGHT_ATTEMPTS):
+        _, addresses = resolve(host)
+        if addresses:
+            hybrid = probe("vorabpruefung", host, addresses[0], "nur_hybrid", writer)
+            if hybrid["group"] == HYBRID and hybrid["cert_verified"]:
+                print(f"Vorabprüfung bestanden: {host} verhandelt {hybrid['group']}", flush=True)
+                return
+        time.sleep(PREFLIGHT_PAUSE_S)
+    sys.exit("Vorabprüfung fehlgeschlagen. Scan abgebrochen: Das Netz ist gestört, verfälscht TLS "
+             "oder der Scanner arbeitet nicht korrekt.")
+
+
+def run_pass(sites, scan_pass, probe_writer, host_writer, files):
+    """Prüft eine Liste von Hosts und gibt ihre Ergebnisse zurück."""
+    results = []
+    for position, site in enumerate(sites, start=1):
+        started = time.monotonic()
+        result = {**scan_host(site, probe_writer), "scan_pass": scan_pass}
+        results.append(result)
+        host_writer.writerow(result)
+        for file in files:
+            file.flush()
+        print(f"Durchgang {scan_pass}, {position}/{len(sites)} {site['domain']}: {result['pq_result']}",
+              flush=True)
+        time.sleep(max(0, MIN_SECONDS_PER_HOST - (time.monotonic() - started)))
+    return results
 
 
 def tool_versions():
@@ -273,14 +297,14 @@ def main():
         probe_writer.writeheader()
         host_writer.writeheader()
         preflight(probe_writer)
-        for position, site in enumerate(sites, start=1):
-            started = time.monotonic()
-            result = scan_host(site, probe_writer)
-            host_writer.writerow(result)
-            hosts_file.flush()
-            probes_file.flush()
-            print(f"{position}/{len(sites)} {site['domain']}: {result['pq_result']}", flush=True)
-            time.sleep(max(0, MIN_SECONDS_PER_HOST - (time.monotonic() - started)))
+        files = (hosts_file, probes_file)
+        results = run_pass(sites, 1, probe_writer, host_writer, files)
+        repeat = [site for site, result in zip(sites, results)
+                  if result["pq_result"] in SECOND_PASS_RESULTS]
+        manifest["second_pass_hosts"] = [site["domain"] for site in repeat]
+        if repeat:
+            time.sleep(SECOND_PASS_PAUSE_S)
+            run_pass(repeat, 2, probe_writer, host_writer, files)
 
     manifest["finished_utc"] = now_utc()
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",

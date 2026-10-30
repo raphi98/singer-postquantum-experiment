@@ -80,6 +80,8 @@ def classify_hosting(row, rules):
 def load_hosts(name):
     hosts = pd.read_csv(REPO_DIR / "data" / "raw" / "scan" / name / "hosts.csv", dtype=str,
                         keep_default_na=False)
+    # Bei zwei Durchgängen zählt der letzte, die Zeile davor bleibt in den Rohdaten.
+    hosts = hosts.drop_duplicates("domain", keep="last").reset_index(drop=True)
     rules = load_rules()
     hosts["hosting"] = [classify_hosting(row, rules) for row in hosts.to_dict("records")]
     return hosts
