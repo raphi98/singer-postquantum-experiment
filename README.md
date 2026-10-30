@@ -105,8 +105,8 @@ Auswertung:
 .venv/bin/python analysis/analyze_lab.py full-01
 ```
 
-Während der Messung den Mac am Netzteil lassen und nichts Rechenintensives starten. Der
-Ruhezustand wird automatisch verhindert. Die Skripte brechen ab, wenn MTU, Offloads oder
+Während der Messung den Mac am Netzteil und den Deckel offen lassen und nicht daran arbeiten.
+Der Ruhezustand wird automatisch verhindert. Die Skripte brechen ab, wenn MTU, Offloads oder
 TCP-Einstellungen nicht passen, und überschreiben keine vorhandenen Rohdaten.
 
 Die Testkette in `lab/certs/` liegt bewusst im Repo, damit Größen exakt gleich bleiben. Der
@@ -170,7 +170,9 @@ Laufende Liste, wird bei jeder Messreihe ergänzt.
   einem Stück an. Das trifft beide Gruppen gleich, die absoluten Dauern sind aber zu hoch.
 - netem-Timer haben auch nach der Kalibrierung rund 1–2 ms Streuung (Ping-mdev).
 - Hintergrundlast auf dem Mac lässt sich nicht ganz ausschließen. Die zufällige Verschachtelung
-  verteilt sie auf beide Gruppen.
+  verteilt sie auf beide Gruppen. Während der Vollmessung sollte der Mac ungenutzt bleiben.
+- Die Pilotläufe liefen laut `pmset`-Log auf Akku, die Vollmessung läuft am Netzteil. Das
+  Delay wird pro Block neu kalibriert, die Zeiten des Piloten sind aber nicht direkt vergleichbar.
 - Die Ergebnisse gelten für ARM64 und diese OpenSSL-Version. Andere CPUs liefern andere
   Millisekunden, vor allem für den Rechenanteil.
 
@@ -210,6 +212,7 @@ Laufende Liste, wird bei jeder Messreihe ergänzt.
 | `aux-idle-pause*` | Einfluss der Pause im Ideal-Profil | Grundlage der 200-ms-Entscheidung |
 | `pilot-02` | mit Kalibrierung, Pause, Kontrolle, pcaps | ungültig: hybrider ClientHello nur ein Paket |
 | `aux-clienthello` | ClientHello ohne `--tlsv1.3` | zeigt 2 Pakete |
+| `aborted-full-01` | Start der Vollmessung am 30.10.2026 | auf Wunsch nach rund 5 Minuten abgebrochen, weil der Mac gebraucht wurde. 430 Handshakes aus dem ersten Profil (`mobil`), ohne Serverlog und `checks.csv` nicht auswertbar. |
 | `pilot-03` | aktueller Aufbau | gültiger Pilot, n = 20 je Zelle. Dient nur der Funktionsprüfung. In `extrem` zeigt er X25519 mit 25 % gegen 5 % verzögerten Handshakes im Nachteil, das ist Zufall bei n = 20 (Fisher p = 0,18). |
 
 ## Teil B: Feldstudie
