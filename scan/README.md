@@ -124,6 +124,46 @@ Diese Regeln stehen vor dem Vollscan fest.
   größer als das der Branche. Ein p ≥ 0,05 belegt nicht, dass die Branche keine Rolle spielt. Es
   zeigt nur, dass diese Stichprobe keinen Effekt nachweist.
 
+## Ergebnis des Vollscans `full-01`
+
+Scan am 30.10.2026, 121 von 122 Hosts auswertbar (`register.gv.at` ohne DNS-Eintrag). Der
+vollständige Bericht steht in `data/processed/scan/full-01/report.md`.
+
+**66 von 121 Hosts (54,5 %, 95-%-Intervall 45,7 % bis 63,1 %) unterstützen X25519MLKEM768.**
+
+| Branche | Anteil | | Hosting | Anteil |
+|---|---:|---|---|---:|
+| Onlineshops | 22 von 25 (88 %) | | Akamai | 7 von 7 (100 %) |
+| Behörden | 14 von 24 (58 %) | | AWS | 3 von 3 (100 %) |
+| Nachrichten | 14 von 25 (56 %) | | Cloudflare | 18 von 19 (95 %) |
+| Banken | 9 von 22 (41 %) | | Andere CDN/Cloud | 12 von 16 (75 %) |
+| Hochschulen | 7 von 25 (28 %) | | Sonstige/eigener Server | 26 von 76 (34 %) |
+
+**H3 ist nach der festgelegten Regel nicht bestätigt, weil eine von drei Bedingungen fehlt.**
+
+| Bedingung | Ergebnis | Erfüllt |
+|---|---|---|
+| Hosting wirkt bei fester Branche | p < 0,001 | ja |
+| Branche wirkt bei festem Hosting nicht | p = 0,012 | **nein** |
+| Cramérs V von Hosting größer als von Branche | 0,55 gegen 0,41 | ja |
+
+Hosting ist der stärkere Faktor, die Branche hat aber einen eigenen Zusammenhang mit der
+Verbreitung.
+
+**Explorativ, nach dem Scan ergänzt und ohne Einfluss auf das Urteil:** Zählt jedes autonome System
+pro Branche nur einmal (69 Einheiten), verschwindet der Branchen-Effekt (p = 0,319), der
+Hosting-Effekt bleibt (p = 0,018). Das deutet darauf hin, dass der Branchen-Effekt an wenigen
+Betreibern hängt, etwa am BRZ mit 6 von 6 Behörden-Seiten. Belegt ist das damit nicht.
+
+**Weitere Befunde**
+
+- Präferenz: 54 von 66 Hosts wählen den Hybrid unabhängig von der Client-Reihenfolge, 11 folgen dem
+  Client, darunter alle 7 Akamai-Hosts. `edm.gv.at` unterstützt den Hybrid, wählt aber X25519.
+- Cloudflare wirkt nicht automatisch: `hunkemoller.at` liegt dort, spricht aber nur TLS 1.2.
+- 6 von 121 Hosts sprechen nur TLS 1.2.
+- `modul.ac.at` beantwortet den Kontroll-Handshake, bricht bei nur_hybrid aber in beiden Durchgängen
+  ab. `kontrast.at` hat ein Zertifikat, das die Prüfung nicht besteht.
+
 ## Störfaktoren und Limitationen
 
 Laufende Liste, wird bei jedem Scan ergänzt.
@@ -147,7 +187,11 @@ Laufende Liste, wird bei jedem Scan ergänzt.
 - Nur 22 Banken-Kandidaten. Einige Banken stehen in Tranco nicht unter `.at`.
 - Die Hosts sind nicht unabhängig: Viele liegen beim selben Anbieter (BRZ, interneX, Russmedia).
   Die p-Werte fallen dadurch eher zu klein aus.
-- Bei n ≈ 120 bleiben kleine Klassen wie Akamai dünn besetzt, ihre Intervalle sind breit.
+- Bei n ≈ 120 bleiben kleine Klassen dünn besetzt (AWS 3, Akamai 7), ihre Intervalle sind breit.
+- Branche und Hosting überlappen kaum: Alle 24 Behörden und alle 25 Hochschulen liegen bei
+  „Sonstige“, bei den Onlineshops nur eine Seite. Der Hosting-Effekt lässt sich daher nur bei
+  Banken, Nachrichten und Shops innerhalb der Branche prüfen. Beide Merkmale sind nicht sauber
+  trennbar, und kausale Aussagen sind mit diesem Design nicht möglich.
 
 **Messung**
 
@@ -163,6 +207,7 @@ Laufende Liste, wird bei jedem Scan ergänzt.
 | Scan | Zweck | Status |
 |---|---|---|
 | `pilot-01` | 20 Hosts, 4 je Kategorie, Seed 1 | gültig, dient nur der Funktionsprüfung. Gezogen vor der Korrektur der Altdomains, enthält daher `tuwien.ac.at`. |
+| `full-01` | 122 Hosts aus `scan/sites.csv`, Commit `79fbc8e` | gültig, 2 Hosts im zweiten Durchgang (`register.gv.at`, `modul.ac.at`), beide ohne Änderung. |
 | `aborted-full-01` | erster Start des Vollscans | an der Vorabprüfung gescheitert: zwei Zeitüberschreitungen gegen `pq.cloudflareresearch.com` um 10:03. Kein Host wurde gescannt. Danach 12 von 12 Handshakes erfolgreich, die Ursache blieb ungeklärt. |
 
 ## Offen

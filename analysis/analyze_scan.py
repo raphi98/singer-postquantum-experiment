@@ -149,6 +149,21 @@ def stratified_permutation(data, factor, stratum, rng):
             "p": (at_least + 1) / (PERMUTATIONS + 1)}
 
 
+def operator_units(data):
+    """Fasst alle Hosts desselben autonomen Systems pro Branche zu einer Einheit zusammen.
+
+    Explorativ, nach dem Scan ergänzt: Liegen sechs Behörden beim selben Rechenzentrum, ist das
+    eher eine Entscheidung als sechs. Der Test bei Host-Ebene überschätzt dann die Evidenz.
+    """
+    units = data.groupby(["kategorie", "hosting", "asn"], as_index=False)["pq"].mean()
+    units["pq"] = units["pq"] >= 0.5
+    return units
+
+
+def format_p(value):
+    return "< 0.001" if value < 0.001 else f"{value:.3f}"
+
+
 def judge_h3(associations, conditional):
     hosting = associations.set_index("merkmal").loc["hosting"]
     category = associations.set_index("merkmal").loc["kategorie"]
@@ -222,14 +237,17 @@ def plot_shares(table, n, out_dir):
     save_figure(figure, out_dir, "scan_pq_anteil")
 
 
-def format_report(name, hosts, data, table, associations, conditional, criteria):
+def format_report(name, hosts, data, table, associations, conditional, criteria, units, unit_tests):
     lines = [f"# Auswertung {name}", ""]
     if len(data) < PILOT_BELOW_N:
         lines += [f"**Pilot mit n = {len(data)}. Zahlen dienen nur der Funktionsprüfung.**", ""]
 
     lines += ["## Ergebnis pro Host", "", "| Ergebnis | Anzahl |", "|---|---:|"]
     lines += [f"| {key} | {value} |" for key, value in hosts["pq_result"].value_counts().items()]
-    lines += ["", f"In die Auswertung gehen {len(data)} von {len(hosts)} Hosts ein.", ""]
+    low, high = wilson(data["pq"].sum(), len(data))
+    lines += ["", f"In die Auswertung gehen {len(data)} von {len(hosts)} Hosts ein.",
+              f"Mit Post-Quanten-TLS: {data['pq'].sum()} ({data['pq'].mean():.1%}, "
+              f"95-%-Intervall {low:.1%} bis {high:.1%}).", ""]
     flagged = hosts[hosts["inconsistent"] == "1"]["domain"].tolist()
     lines += [f"Widersprüchliche Hosts: {', '.join(flagged) if flagged else 'keine'}", ""]
 
@@ -249,14 +267,21 @@ def format_report(name, hosts, data, table, associations, conditional, criteria)
 
     lines += ["", "## Tests", "", "| Merkmal | Test | p | Cramérs V |", "|---|---|---:|---:|"]
     for row in associations.itertuples():
-        lines.append(f"| {row.merkmal} | {row.test} | {row.p:.3f} | {row.cramers_v:.2f} |")
+        lines.append(f"| {row.merkmal} | {row.test} | {format_p(row.p)} | {row.cramers_v:.2f} |")
 
     lines += ["", "## Geschichteter Permutationstest", "", "| Geprüft | Festgehalten | p |", "|---|---|---:|"]
     for row in conditional.itertuples():
-        lines.append(f"| {row.merkmal} | {row.gehalten} | {row.p:.3f} |")
+        lines.append(f"| {row.merkmal} | {row.gehalten} | {format_p(row.p)} |")
 
     lines += ["", "## H3", ""]
     lines += [f"- {text}: {'ja' if met else 'nein'}" for text, met in criteria.items()]
+
+    lines += ["", "## Sensitivität: Betreiber statt Hosts (explorativ)", "",
+              f"Jedes autonome System zählt pro Branche einmal, zusammen {len(units)} Einheiten. "
+              "Diese Analyse wurde nach dem Scan ergänzt und entscheidet nicht über H3.", "",
+              "| Geprüft | Festgehalten | p |", "|---|---|---:|"]
+    for row in unit_tests.itertuples():
+        lines.append(f"| {row.merkmal} | {row.gehalten} | {format_p(row.p)} |")
     return "\n".join(lines) + "\n"
 
 
@@ -272,6 +297,9 @@ def main():
     conditional = pd.DataFrame([stratified_permutation(data, "kategorie", "hosting", rng),
                                 stratified_permutation(data, "hosting", "kategorie", rng)])
     criteria = judge_h3(associations, conditional)
+    units = operator_units(data)
+    unit_tests = pd.DataFrame([stratified_permutation(units, "kategorie", "hosting", rng),
+                               stratified_permutation(units, "hosting", "kategorie", rng)])
 
     out_dir = REPO_DIR / "data" / "processed" / "scan" / name
     figures_dir = REPO_DIR / "figures" / name
@@ -280,8 +308,9 @@ def main():
 
     hosts.to_csv(out_dir / "hosts_classified.csv", index=False)
     table.to_csv(out_dir / "shares.csv", index=False)
-    pd.concat([associations, conditional]).to_csv(out_dir / "tests.csv", index=False)
-    report = format_report(name, hosts, data, table, associations, conditional, criteria)
+    pd.concat([associations, conditional, unit_tests.assign(test="Betreiber-Ebene")]).to_csv(
+        out_dir / "tests.csv", index=False)
+    report = format_report(name, hosts, data, table, associations, conditional, criteria, units, unit_tests)
     (out_dir / "report.md").write_text(report, encoding="utf-8")
 
     plot_hosting_by_category(data, figures_dir)
