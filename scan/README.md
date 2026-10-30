@@ -103,7 +103,7 @@ curl -sSL -o data/raw/scan/tranco/PYK6J/top1m.csv https://tranco-list.eu/downloa
 | Alle Handshakes eines Hosts gegen dieselbe IP | Die Hosting-Zuordnung gehört dann sicher zum getesteten Server. |
 | `www.` zuerst, sonst ohne | Dort landen Besucher. HTTP-Weiterleitungen dürfen wegen der Vorgabe „nur Handshakes“ nicht verfolgt werden, deshalb stehen im Rahmen die aktuellen Hauptadressen. |
 | Hosting aus CNAME und ASN, CNAME zuerst | Ein Akamai-Knoten im Netz eines Providers trägt dessen ASN. Die Zuordnung entsteht erst in der Auswertung aus `scan/hosting_rules.csv`, geänderte Regeln brauchen keinen neuen Scan. |
-| Zusätzliche Klasse „Andere CDN/Cloud“ | **Ergänzung zur Vorgabe.** Fastly, Microsoft, Google und Vercel sind weder eigene Server noch einer der drei genannten Anbieter. In „Sonstige“ würden sie die Aussage zu H3 verwässern. |
+| Zusätzliche Klasse „Andere CDN/Cloud“ | **Ergänzung zur Vorgabe.** Sie umfasst CDNs und Hyperscaler, die TLS selbst beenden: Fastly, Microsoft, Google, Vercel, Imperva, Link11. In „Sonstige“ würden sie die Aussage zu H3 verwässern. Generische Hoster wie Hetzner, IONOS, OVH oder Exoscale bleiben bei „Sonstige“. Link11 kam nach dem Vollscan dazu, aber vor der Kreuztabelle mit den Ergebnissen. |
 | Vorabprüfung gegen `pq.cloudflareresearch.com` | Sie weist nach, dass der Scanner funktioniert. Eine TLS-Inspektion im Netz fiele auf, weil die Zertifikatsprüfung gegen den CA-Store des Containers scheitert. |
 | Höchstens ein Host pro Sekunde, 12 s Zeitlimit, kein HTTP | Der Scan belastet die Hosts nicht stärker als ein einzelner Seitenaufruf. Es werden nur öffentlich sichtbare Verbindungsparameter erhoben. |
 

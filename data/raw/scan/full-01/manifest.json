@@ -1,0 +1,39 @@
+{
+  "name": "full-01",
+  "sites_file": "scan/sites.csv",
+  "git_commit": "79fbc8ea5d66e6a1003b24906885cfc101ea755f",
+  "started_utc": "2026-10-30T09:05:50+00:00",
+  "hosts": 122,
+  "probes": {
+    "kontrolle": [],
+    "nur_hybrid": [
+      "-tls1_3",
+      "-groups",
+      "X25519MLKEM768"
+    ],
+    "hybrid_zuerst": [
+      "-tls1_3",
+      "-groups",
+      "*X25519MLKEM768:*X25519"
+    ],
+    "klassisch_zuerst": [
+      "-tls1_3",
+      "-groups",
+      "*X25519:*X25519MLKEM768"
+    ]
+  },
+  "handshake_timeout_s": 12,
+  "min_seconds_per_host": 1.0,
+  "versions": {
+    "openssl": "OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)",
+    "dig": "DiG 9.20.30-1~deb13u1-Debian",
+    "python": "3.13.5",
+    "debian": "13.7",
+    "kernel": "7.0.14-linuxkit"
+  },
+  "second_pass_hosts": [
+    "register.gv.at",
+    "modul.ac.at"
+  ],
+  "finished_utc": "2026-10-30T09:08:55+00:00"
+}
