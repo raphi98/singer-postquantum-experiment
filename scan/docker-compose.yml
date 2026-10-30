@@ -1,0 +1,9 @@
+name: pqtls-scan
+
+services:
+  scanner:
+    build: .
+    image: pqtls-scan/scanner
+    volumes:
+      - ..:/repo
+    working_dir: /repo
