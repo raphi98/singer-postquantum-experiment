@@ -2,7 +2,7 @@
 """Zeichnet eine Stichprobe von Handshakes als pcap auf (Teil A, Datenmenge).
 
 Bewusst getrennt von run_experiment.py: tcpdump kostet CPU und soll die Zeitmessung nicht
-beeinflussen. Beispiel: python3 lab/capture_pcaps.py --name pilot-01 --per-group 20
+beeinflussen. Beispiel: python3 lab/capture_pcaps.py --name pilot-02 --per-group 20
 """
 import argparse
 import subprocess
@@ -27,7 +27,7 @@ def capture(profile, group, args, pcap_dir):
     result = subprocess.run(
         [*labctl.COMPOSE, "exec", "-T", "client", "python3", "/lab/measure.py",
          "--profile", profile["name"], "--runs", str(args.per_group), "--warmup", "0",
-         "--seed", str(args.seed), "--groups", group,
+         "--seed", str(args.seed), "--groups", group, "--pause-ms", "200",
          "--out", f"{pcap_dir}/capture_log.csv"],
         capture_output=True, text=True, check=False,
     )

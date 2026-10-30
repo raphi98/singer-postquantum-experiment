@@ -12,6 +12,7 @@ import datetime as dt
 import os
 import random
 import subprocess
+import time
 
 GROUPS = ["X25519", "X25519MLKEM768"]
 SERVER_NAME = "lab-server"
@@ -39,7 +40,9 @@ CSV_FIELDS = [
 def curl_command(group, request_id):
     return [
         "curl", "-q", "--silent", "--output", "/dev/null",
-        "--http1.1", "--tlsv1.3", "--tls-max", "1.3",
+        # Kein --tlsv1.3: Das würde TLS-1.2-Cipher und -Extensions aus dem ClientHello streichen,
+        # und der hybride Hello passte unrealistisch in ein Paket. TLS 1.3 erzwingt der Server.
+        "--http1.1",
         "--curves", group,
         "--cacert", "/certs/root.pem",   # nur eine Wurzel: der System-Store würde mitgemessen
         "--no-sessionid", "--no-keepalive",
@@ -85,6 +88,7 @@ def measure(args):
                 error=row.get("error", "") or result.stderr.strip(),
             )
             writer.writerow(row)
+            time.sleep(args.pause_ms / 1000)
     print(f"{args.profile}: {len(plan)} Handshakes geschrieben")
 
 
@@ -96,6 +100,7 @@ def main():
     parser.add_argument("--seed", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--groups", default=",".join(GROUPS))
+    parser.add_argument("--pause-ms", type=int, default=0, help="Pause zwischen zwei Handshakes")
     measure(parser.parse_args())
 
 

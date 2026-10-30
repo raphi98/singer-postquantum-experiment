@@ -15,6 +15,7 @@ RAW_DIR = REPO_DIR / "data" / "raw" / "lab"
 COMPOSE = ["docker", "compose", "-f", str(LAB_DIR / "docker-compose.yml")]
 SERVICES = ("server", "client")
 SERVER_IP = "172.30.0.10"
+CLIENT_IP = "172.30.0.20"
 IFACE = "eth0"
 SERVER_LOG = "/var/log/lab/access.tsv"
 
@@ -61,11 +62,16 @@ def start_testbed():
     """Startet die Container und schaltet die Offloads ab.
 
     Ohne das fasst der Kernel Segmente zu Sammelpaketen zusammen: netem verwirft dann mehrere
-    Segmente auf einmal und tcpdump zeigt Pakete, die es so nie gäbe.
+    Segmente auf einmal und tcpdump zeigt Pakete, die es so nie gäbe. Die ARP-Einträge werden
+    fest gesetzt, weil ARP sonst selbst durch netem läuft und einzelne Läufe verzögert.
     """
     subprocess.run([*COMPOSE, "up", "-d", "--build"], check=True, capture_output=True)
+    macs = {}
     for service in SERVICES:
         in_container(service, f"ethtool -K {IFACE} tso off gso off gro off")
+        macs[service] = in_container(service, f"cat /sys/class/net/{IFACE}/address")
+    in_container("client", f"ip neigh replace {SERVER_IP} lladdr {macs['server']} dev {IFACE} nud permanent")
+    in_container("server", f"ip neigh replace {CLIENT_IP} lladdr {macs['client']} dev {IFACE} nud permanent")
     verify_testbed()
 
 
@@ -83,21 +89,31 @@ def verify_testbed():
             sys.exit(f"{service}: tcp_no_metrics_save ist nicht gesetzt")
 
 
-def apply_profile(profile):
-    """Setzt netem auf beiden Seiten.
-
-    Jede Richtung bekommt die halbe RTT, zusammen ergibt das die Soll-RTT. Die Verlustrate gilt
-    pro Paket in jeder Richtung, wie auf einer echten Strecke.
-    """
-    delay = profile["rtt_ms"] / 2
-    loss = profile["loss_pct"]
+def set_netem(delay_ms, loss_pct):
     for service in SERVICES:
-        in_container(service, f"tc qdisc replace dev {IFACE} root netem delay {delay:g}ms loss {loss:g}%")
+        in_container(service, f"tc qdisc replace dev {IFACE} root netem delay {delay_ms:.2f}ms loss {loss_pct:g}%")
+
+
+def apply_profile(profile):
+    """Setzt netem auf beiden Seiten und gibt das Delay pro Richtung zurück.
+
+    Jede Richtung bekommt die halbe RTT. Die Verlustrate gilt pro Paket in jeder Richtung, wie
+    auf einer echten Strecke. In der VM wachen die netem-Timer rund 1,2 ms zu spät auf, deshalb
+    wird der Aufschlag verlustfrei per Ping gemessen und vom Delay abgezogen.
+    """
+    target = profile["rtt_ms"]
+    delay = target / 2
+    set_netem(delay, 0)
+    if target > 0:
+        overhead = ping_check()["ping_rtt_ms"] - target
+        delay = max((target - overhead) / 2, 0)
+    set_netem(delay, profile["loss_pct"])
+    return delay
 
 
 def ping_check(count=300):
     """Prüft die eingestellte RTT und den Verlust unabhängig von TLS."""
-    out = in_container("client", f"ping -q -n -c {count} -i 0.02 -w 30 {SERVER_IP} || true")
+    out = in_container("client", f"ping -q -n -c {count} -i 0.02 -W 2 {SERVER_IP} || true")
     sent, received = re.search(r"(\d+) packets transmitted, (\d+) received", out).groups()
     rtt = re.search(r"= [\d.]+/([\d.]+)/[\d.]+/([\d.]+) ms", out)
     return {

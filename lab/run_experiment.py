@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Misst Handshake-Dauern für alle Netzprofile (Teil A).
 
-Beispiel Pilot:  python3 lab/run_experiment.py --name pilot-01 --runs 20 --warmup 5
+Beispiel Pilot:  python3 lab/run_experiment.py --name pilot-02 --runs 20 --warmup 5
 Beispiel voll:   python3 lab/run_experiment.py --name full-01 --runs 1000 --warmup 50
 
 Ergebnis in data/raw/lab/<name>/: handshakes.csv, server_log.tsv, checks.csv, manifest.json
@@ -18,7 +18,7 @@ import labctl
 
 def run_block(profile, args, run_dir):
     """Misst ein Profil und gibt die Kontrollwerte des Blocks zurück."""
-    labctl.apply_profile(profile)
+    delay = labctl.apply_profile(profile)
     started = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     ping = labctl.ping_check()
     labctl.in_container("server", f"truncate -s 0 {labctl.SERVER_LOG}")
@@ -27,7 +27,8 @@ def run_block(profile, args, run_dir):
     result = subprocess.run(
         [*labctl.COMPOSE, "exec", "-T", "client", "python3", "/lab/measure.py",
          "--profile", profile["name"], "--runs", str(args.runs), "--warmup", str(args.warmup),
-         "--seed", str(args.seed), "--out", f"/data/{args.name}/handshakes.csv"],
+         "--seed", str(args.seed), "--pause-ms", str(args.pause_ms),
+         "--out", f"/data/{args.name}/handshakes.csv"],
         capture_output=True, text=True, check=False,
     )
     if result.returncode != 0:
@@ -42,7 +43,7 @@ def run_block(profile, args, run_dir):
     print(f"{profile['name']}: fertig ({started} bis {finished})", flush=True)
     return {"profile": profile["name"], "started_utc": started, "finished_utc": finished,
             "rtt_target_ms": profile["rtt_ms"], "loss_target_pct": profile["loss_pct"],
-            **ping, **delta}
+            "netem_delay_ms": round(delay, 2), **ping, **delta}
 
 
 def main():
@@ -52,6 +53,8 @@ def main():
     parser.add_argument("--warmup", type=int, required=True, help="Aufwärmläufe pro Profil und Gruppe")
     parser.add_argument("--seed", type=int, default=20261111)
     parser.add_argument("--profiles", help="Komma-Liste, Standard: alle")
+    parser.add_argument("--pause-ms", type=int, default=200,
+                        help="Pause vor jedem Handshake, damit die CPU in allen Profilen gleich startet")
     args = parser.parse_args()
 
     run_dir = labctl.RAW_DIR / args.name
@@ -72,6 +75,7 @@ def main():
         "runs_per_cell": args.runs,
         "warmup_per_cell": args.warmup,
         "seed": args.seed,
+        "pause_ms": args.pause_ms,
         "profile_order": [p["name"] for p in profiles],
         "versions": labctl.collect_versions(),
     }
