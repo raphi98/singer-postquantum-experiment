@@ -38,7 +38,8 @@ Rechner gearbeitet wird.
 
 ## Stichprobe: Vorschlag
 
-**Status: `scan/frame.csv` ist ein Entwurf und muss vom Team geprüft werden.**
+**Status: Rahmen eingefroren und Stichprobe gezogen am 30.10.2026 (`scan/sites.csv`, 122 Hosts).
+Die Prüfung in Schritt 3 hat nicht stattgefunden, das Team hat den Entwurf direkt freigegeben.**
 
 1. **Grundgesamtheit:** alle `.at`-Domains der Tranco-Liste `PYK6J`, 3.097 Stück in
    `scan/tranco_PYK6J_at.csv`. Die Liste ist öffentlich und unter ihrer ID dauerhaft abrufbar,
@@ -135,6 +136,10 @@ Laufende Liste, wird bei jedem Scan ergänzt.
 
 **Stichprobe**
 
+- Der Rahmen `scan/frame.csv` beruht auf einer einzigen Zuordnung anhand der Domainnamen, ohne
+  Prüfung durch eine zweite Person und ohne Abgleich mit der FMA-Datenbank. Nur die Behörden folgen
+  einer festen Regel. Einzelne Zuordnungen können falsch sein, die Spalte `pruefung` weist sie als
+  `entwurf` aus.
 - Tranco bildet weltweite Popularität ab, nicht österreichische Nutzung.
 - Der `.at`-Filter schließt österreichische Angebote unter anderen Endungen aus, etwa
   `erstegroup.com` oder `tt.com`, und nimmt ausländische Betreiber mit `.at` auf.
@@ -160,6 +165,5 @@ Laufende Liste, wird bei jedem Scan ergänzt.
 
 ## Offen
 
-- Team prüft `scan/frame.csv`, danach Ziehung und Vollscan.
 - Optionale Gegenprobe mit Cloudflare Radar. Sie braucht einen API-Token des Teams und ist nicht
   umgesetzt.
