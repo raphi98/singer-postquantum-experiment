@@ -1,0 +1,6 @@
+name,label,rtt_ms,loss_pct
+ideal,Ideal,0,0
+europa,Europa,20,0
+uebersee,Übersee,150,0
+mobil,Mobil schlecht,100,2
+extrem,Extrem,100,5

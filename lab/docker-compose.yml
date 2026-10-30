@@ -1,0 +1,56 @@
+# Testbed für Teil A: genau zwei Container (Server, Client) an einer eigenen Bridge.
+# "tools" ist nur für die pcap-Auswertung da und läuft nie während einer Messung.
+name: pqtls-lab
+
+x-common: &common
+  cap_add:
+    - NET_ADMIN   # tc netem und ethtool
+  sysctls:
+    # Kein Merken von RTT/ssthresh pro Ziel: sonst sind die Läufe nicht unabhängig.
+    net.ipv4.tcp_no_metrics_save: "1"
+  init: true
+
+services:
+  server:
+    <<: *common
+    build: ./server
+    image: pqtls-lab/server
+    networks:
+      labnet:
+        ipv4_address: 172.30.0.10
+    tmpfs:
+      - /var/log/lab   # Log im RAM, damit Platten-I/O die Messung nicht stört
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+
+  client:
+    <<: *common
+    build: ./client
+    image: pqtls-lab/client
+    command: ["sleep", "infinity"]
+    networks:
+      labnet:
+        ipv4_address: 172.30.0.20
+    volumes:
+      - ./certs:/certs:ro
+      - ./client/measure.py:/lab/measure.py:ro
+      - ../data/raw/lab:/data
+
+  tools:
+    profiles: ["tools"]
+    build: ./tools
+    image: pqtls-lab/tools
+    network_mode: none
+    volumes:
+      - ..:/repo
+
+networks:
+  labnet:
+    driver: bridge
+    driver_opts:
+      # Docker Desktop setzt sonst MTU 65535: Ein ClientHello würde nie in zwei
+      # Pakete zerfallen und der in H2 geprüfte Mechanismus gar nicht auftreten.
+      com.docker.network.driver.mtu: "1500"
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
