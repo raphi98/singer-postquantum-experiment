@@ -209,10 +209,12 @@ Laufende Liste, wird bei jeder Messreihe ergänzt.
 
 - Beide Container laufen in einer VM auf demselben Host. Es gibt keine echte Leitung, kein
   Bandbreitenlimit und keine Warteschlangen im Netz.
-- **Kalte CPU:** Nach einer Wartezeit dauert die Verarbeitung länger. Bei 100 ms RTT liegt der
-  Handshake rund 12 ms über der RTT. Die pcaps zeigen, dass das CPU-Zeit ist (Server rund 4,5 ms
-  statt 0,5 ms, Client rund 5,5 ms statt 2,6 ms), der Server-Flight kommt in unter 0,1 ms an
-  einem Stück an. Das trifft beide Gruppen gleich, die absoluten Dauern sind aber zu hoch.
+- **Kalte CPU:** Nach einer Wartezeit dauert die Verarbeitung länger. In `full-01` liegt der
+  Median in `kontrolle` mit 114,5 ms rund 13 ms über der Ping-RTT. Die pcaps zeigen, dass vor
+  allem der Server langsamer wird: rund 4,8 ms statt 0,5 ms wie in `ideal`, der Client rund 3,9 ms
+  statt 3,0 ms (Abstand zum nächsten Paket am Client minus halbe Ping-RTT). Der Server-Flight
+  kommt in unter 0,1 ms an einem Stück an. Das trifft beide Gruppen gleich, die absoluten Dauern
+  sind aber zu hoch. In `pilot-03` war auch der Client deutlich langsamer (rund 6 ms statt 2,6 ms).
 - netem-Timer haben auch nach der Kalibrierung rund 1–2 ms Streuung (Ping-mdev). In `full-01`
   lagen `kontrolle` und `extrem`, die als vierter und sechster Block liefen, bei rund 4 ms.
 - Hintergrundlast auf dem Mac lässt sich nicht ganz ausschließen. Die zufällige Verschachtelung
