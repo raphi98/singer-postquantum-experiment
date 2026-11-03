@@ -15,14 +15,15 @@ Präsentation am 11.11.2026.
 | Ordner | Inhalt |
 |---|---|
 | `lab/` | Teil A: docker-compose, Configs, Zertifikate, Messskripte |
-| `scan/` | Teil B: Scanner (noch offen) |
+| `scan/` | Teil B: Scanner, Stichprobe, eigene Dokumentation in `scan/README.md` |
 | `analysis/` | Auswertung, `requirements.txt` |
-| `data/raw/lab/<messreihe>/` | Rohdaten, werden nie überschrieben |
-| `data/processed/lab/<messreihe>/` | aufbereitete Tabellen und Bericht |
-| `figures/<messreihe>/` | Diagramme als PNG und SVG |
+| `data/raw/{lab,scan}/<messreihe>/` | Rohdaten, werden nie überschrieben |
+| `data/processed/{lab,scan}/<messreihe>/` | aufbereitete Tabellen und Bericht |
+| `figures/<messreihe>/` | Diagramme als PNG und SVG, Präfix `lab_` für Teil A und `scan_` für Teil B |
 
-Teil A liegt auf dem Branch `teil-a-labor`. Teil B bekommt einen eigenen Branch von `main`, die
-beiden Teile berühren keine gemeinsamen Dateien außer diesem README.
+Beide Teile entstanden auf eigenen Branches (`teil-a-labor`, `teil-b-feldstudie`) und wurden am
+3.11.2026 nach `main` zusammengeführt. Teil A ist in diesem README dokumentiert, Teil B in
+`scan/README.md`. Beide haben eine Messreihe `full-01`, die Namen beziehen sich jeweils auf den Teil.
 
 ## Teil A: Labor
 
@@ -265,4 +266,11 @@ Laufende Liste, wird bei jeder Messreihe ergänzt.
 
 ## Teil B: Feldstudie
 
-Noch nicht begonnen.
+Aufbau, Stichprobe, Reproduktion, Messentscheidungen und Limitationen stehen in `scan/README.md`.
+
+**Ergebnis des Vollscans `full-01`:** Scan am 30.10.2026, 121 von 122 Hosts auswertbar. 66 von 121
+Hosts (54,5 %, 95-%-Intervall 45,7 % bis 63,1 %) unterstützen X25519MLKEM768.
+
+**H3 ist nach der festgelegten Regel nicht bestätigt.** Hosting ist der stärkere Faktor (Cramérs V
+0,55 gegen 0,41), die Branche hat bei festem Hosting aber einen eigenen Zusammenhang mit der
+Verbreitung (p = 0,012). Der vollständige Bericht steht in `data/processed/scan/full-01/report.md`.
