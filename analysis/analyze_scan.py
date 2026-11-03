@@ -205,7 +205,7 @@ def plot_hosting_by_category(data, out_dir):
         left += values
     axis.set_yticks(positions, CATEGORIES)
     axis.set_xlabel("Anzahl der Websites")
-    axis.xaxis.set_major_locator(MaxNLocator(integer=True))
+    axis.xaxis.set_major_locator(MaxNLocator(integer=True, steps=[1, 2, 5, 10]))
     axis.grid(axis="x")
     axis.tick_params(axis="y", length=0)
     axis.legend(loc="lower left", bbox_to_anchor=(0, 1), ncols=3, borderaxespad=0.2, fontsize=13)

@@ -35,7 +35,7 @@ PILOT_BELOW_N = 200
 
 PROFILES = ["ideal", "europa", "uebersee", "kontrolle", "mobil", "extrem"]
 LOSS_SERIES = ["kontrolle", "mobil", "extrem"]   # gleiche RTT, nur der Verlust ändert sich
-DURATION_TICKS = [100, 200, 500, 1000, 2000, 5000]
+DURATION_TICKS = [100, 300, 1000, 3000]   # halbe Dekaden, 1000 und 2000 stießen aneinander
 
 # Farben: reference palette der dataviz-Vorgaben, geprüft mit validate_palette.js
 COLOR_GROUP = {CLASSIC: "#2a78d6", HYBRID: "#eb6834"}
