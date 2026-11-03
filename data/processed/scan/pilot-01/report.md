@@ -11,6 +11,7 @@
 | nein_nur_tls12 | 1 |
 
 In die Auswertung gehen 20 von 20 Hosts ein.
+Mit Post-Quanten-TLS: 12 (60.0%, 95-%-Intervall 38.7% bis 78.1%).
 
 Widersprüchliche Hosts: keine
 
@@ -43,8 +44,8 @@ Widersprüchliche Hosts: keine
 
 | Merkmal | Test | p | Cramérs V |
 |---|---|---:|---:|
-| kategorie | Fisher-Freeman-Halton | 0.421 | 0.52 |
-| hosting | Fisher-Freeman-Halton | 0.729 | 0.43 |
+| kategorie | Fisher-Freeman-Halton | 0.430 | 0.52 |
+| hosting | Fisher-Freeman-Halton | 0.735 | 0.43 |
 
 ## Geschichteter Permutationstest
 
@@ -58,3 +59,12 @@ Widersprüchliche Hosts: keine
 - Hosting wirkt bei fester Branche (p < 0,05): nein
 - Branche wirkt bei festem Hosting nicht (p ≥ 0,05): ja
 - Cramérs V von Hosting größer als von Branche: nein
+
+## Sensitivität: Betreiber statt Hosts (explorativ)
+
+Jedes autonome System zählt pro Branche einmal, zusammen 18 Einheiten. Diese Analyse wurde nach dem Scan ergänzt und entscheidet nicht über H3.
+
+| Geprüft | Festgehalten | p |
+|---|---|---:|
+| kategorie | hosting | 1.000 |
+| hosting | kategorie | 1.000 |

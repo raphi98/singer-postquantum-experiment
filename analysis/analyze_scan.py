@@ -115,8 +115,11 @@ def association(data, column):
     cramers_v = np.sqrt(chi2 / (table.to_numpy().sum() * min(table.shape[0] - 1, table.shape[1] - 1)))
     if expected.min() >= 5:
         return {"merkmal": column, "test": "Chi-Quadrat", "p": chi2_p, "cramers_v": cramers_v}
+    # SciPy rechnet größere Tafeln als Monte-Carlo-Test, ohne eigenen Seed schwankt der p-Wert.
+    # Eigener Generator, damit die Permutationstests in main() dieselben Ziehungen behalten.
+    method = stats.MonteCarloMethod(rng=np.random.default_rng(PERMUTATION_SEED))
     return {"merkmal": column, "test": "Fisher-Freeman-Halton",
-            "p": stats.fisher_exact(table.to_numpy()).pvalue, "cramers_v": cramers_v}
+            "p": stats.fisher_exact(table.to_numpy(), method=method).pvalue, "cramers_v": cramers_v}
 
 
 def stratum_statistic(codes, outcome, levels):

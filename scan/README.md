@@ -36,7 +36,7 @@ Jeder Scan hält die Stände zusätzlich in `manifest.json` fest. Hardware spiel
 keine Zeiten ausgewertet werden. Anders als die Labormessung kann der Scan laufen, während am
 Rechner gearbeitet wird.
 
-## Stichprobe: Vorschlag
+## Stichprobe
 
 **Status: Rahmen eingefroren und Stichprobe gezogen am 30.10.2026 (`scan/sites.csv`, 122 Hosts).
 Die Prüfung in Schritt 3 hat nicht stattgefunden, das Team hat den Entwurf direkt freigegeben.**
@@ -67,7 +67,7 @@ Banken, Behörden und Shops nicht ab.
 |---|---:|---|
 | Nachrichten | 42 | Redaktionelles Angebot mit aktueller allgemeiner, regionaler oder Wirtschaftsberichterstattung. Keine reinen Sport-, Lifestyle-, TV- oder Fachmedien und keine Presseportale. |
 | Onlineshops | 94 | Verkauf an Privatkundinnen und -kunden mit eigenem Warenkorb unter der `.at`-Domain. Keine Kleinanzeigen, C2C-Marktplätze, Preisvergleiche oder B2B-Shops. Auch ausländische Betreiber zählen. |
-| Banken | 22 | Kreditinstitut laut FMA-Unternehmensdatenbank. Eigene Online-Banking-Domains zählen separat. Keine Versicherungen, keine Zentralbank. **Gegen die FMA-Datenbank zu prüfen.** |
+| Banken | 22 | Kreditinstitut laut FMA-Unternehmensdatenbank. Eigene Online-Banking-Domains zählen separat. Keine Versicherungen, keine Zentralbank. Nicht gegen die FMA-Datenbank geprüft, siehe Limitationen. |
 | Behörden | 40 | Regel: alle `.gv.at` aus der Liste, ohne Aliasse (`magwien`, `parlinkom`, `noel`, `land-oberoesterreich`). |
 | Hochschulen | 48 | Universität, Fachhochschule, Privatuniversität oder Pädagogische Hochschule. Pro Einrichtung eine Domain, und zwar die aktuelle Hauptadresse statt Altdomains (`tuwien.at` statt `tuwien.ac.at`). |
 
@@ -115,7 +115,10 @@ Diese Regeln stehen vor dem Vollscan fest.
   `unklar`, `nicht_erreichbar` und `dns_fehler` fallen aus der Auswertung und werden berichtet.
 - **Anteile** pro Kategorie und Hosting-Klasse mit 95-%-Wilson-Intervall.
 - **Tests:** Chi-Quadrat, wenn alle erwarteten Häufigkeiten mindestens 5 sind, sonst
-  Fisher-Freeman-Halton. Effektstärke ist Cramérs V.
+  Fisher-Freeman-Halton. Effektstärke ist Cramérs V. SciPy rechnet Fisher-Freeman-Halton als
+  Monte-Carlo-Test mit 9.999 Ziehungen. Den Seed 20261111 dafür gibt es erst seit dem 3.11.2026,
+  vorher schwankte der p-Wert im Pilot in der zweiten Nachkommastelle. `full-01` ändert sich
+  dadurch nicht.
 - **Trennung der Merkmale:** Branche und Hosting hängen zusammen, Shops liegen öfter bei CDNs.
   Deshalb prüft ein geschichteter Permutationstest jedes Merkmal, während das andere festgehalten
   wird (10.000 Permutationen).
@@ -206,7 +209,7 @@ Laufende Liste, wird bei jedem Scan ergänzt.
 
 | Scan | Zweck | Status |
 |---|---|---|
-| `pilot-01` | 20 Hosts, 4 je Kategorie, Seed 1 | gültig, dient nur der Funktionsprüfung. Gezogen vor der Korrektur der Altdomains, enthält daher `tuwien.ac.at`. |
+| `pilot-01` | 20 Hosts, 4 je Kategorie, Seed 1 | gültig, dient nur der Funktionsprüfung. Gezogen vor der Korrektur der Altdomains, enthält daher `tuwien.ac.at`. Auswertung am 3.11.2026 mit dem aktuellen Skript neu erzeugt. |
 | `full-01` | 122 Hosts aus `scan/sites.csv`, Commit `79fbc8e` | gültig, 2 Hosts im zweiten Durchgang (`register.gv.at`, `modul.ac.at`), beide ohne Änderung. |
 | `aborted-full-01` | erster Start des Vollscans | an der Vorabprüfung gescheitert: zwei Zeitüberschreitungen gegen `pq.cloudflareresearch.com` um 10:03. Kein Host wurde gescannt. Danach 12 von 12 Handshakes erfolgreich, die Ursache blieb ungeklärt. |
 
