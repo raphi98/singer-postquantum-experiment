@@ -1,0 +1,29 @@
+typ,muster,klasse
+cname,.cdn.cloudflare.net,Cloudflare
+asn,13335,Cloudflare
+asn,209242,Cloudflare
+cname,.edgekey.net,Akamai
+cname,.edgesuite.net,Akamai
+cname,.akamaiedge.net,Akamai
+cname,.akamai.net,Akamai
+cname,.akamaized.net,Akamai
+asn,20940,Akamai
+asn,16625,Akamai
+cname,.vercel-dns.com,Andere CDN/Cloud
+cname,.netlify.app,Andere CDN/Cloud
+cname,.fastly.net,Andere CDN/Cloud
+cname,.azureedge.net,Andere CDN/Cloud
+cname,.azurefd.net,Andere CDN/Cloud
+cname,.trafficmanager.net,Andere CDN/Cloud
+cname,.incapdns.net,Andere CDN/Cloud
+cname,.cloudfront.net,AWS
+cname,.amazonaws.com,AWS
+asn,16509,AWS
+asn,14618,AWS
+asn,54113,Andere CDN/Cloud
+asn,8075,Andere CDN/Cloud
+asn,15169,Andere CDN/Cloud
+asn,396982,Andere CDN/Cloud
+asn,19551,Andere CDN/Cloud
+asn,8068,Andere CDN/Cloud
+asn,34309,Andere CDN/Cloud

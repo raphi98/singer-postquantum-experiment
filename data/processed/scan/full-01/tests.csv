@@ -1,0 +1,7 @@
+merkmal,test,p,cramers_v,gehalten,statistik
+kategorie,Chi-Quadrat,0.00045579869835784214,0.40859453612290875,,
+hosting,Fisher-Freeman-Halton,0.0001,0.5461186812727502,,
+kategorie,,0.012198780121987801,,hosting,16.470691656491656
+hosting,,9.999000099990002e-05,,kategorie,34.529827117327116
+kategorie,Betreiber-Ebene,0.3193680631936806,,hosting,7.172116219036635
+hosting,Betreiber-Ebene,0.018098190180981903,,kategorie,18.41441798941799
