@@ -1,0 +1,2 @@
+profile,started_utc,finished_utc,rtt_target_ms,loss_target_pct,netem_delay_ms,ping_sent,ping_received,ping_rtt_ms,ping_mdev_ms,server_netem_sent,server_netem_dropped,server_TcpOutSegs,server_TcpRetransSegs,server_TcpExtTCPLossProbes,server_TcpExtTCPTimeouts,server_TcpExtTCPSynRetrans,client_netem_sent,client_netem_dropped,client_TcpOutSegs,client_TcpRetransSegs,client_TcpExtTCPLossProbes,client_TcpExtTCPTimeouts,client_TcpExtTCPSynRetrans
+ideal,2026-10-30T08:04:42+00:00,2026-10-30T08:04:56+00:00,0.0,0.0,0.0,300,300,0.147,0.062,1035,0,1035,0,0,0,0,858,0,858,0,0,0,0
