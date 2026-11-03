@@ -85,7 +85,7 @@ python3 -m venv .venv
 .venv/bin/pip install -r analysis/requirements.txt
 ```
 
-Messung (Pilot: `--runs 20 --warmup 5`, Vollmessung samt pcaps knapp 2 Stunden):
+Messung (Pilot: `--runs 20 --warmup 5`, Vollmessung samt pcaps rund 2 Stunden):
 
 ```bash
 python3 lab/run_experiment.py --name full-01 --runs 1000 --warmup 50
@@ -156,6 +156,50 @@ Diese Regeln stehen vor der Vollmessung fest, damit sie nicht an die Ergebnisse 
   26,5 % bei 5 %. Das ergibt rund 78 % Power bei 2 % und rund 99 % bei 5 % Verlust (α = 0,05,
   zweiseitig). Ein Null-Ergebnis bei 2 % ist also weniger aussagekräftig als eines bei 5 %.
 
+### Ergebnis der Vollmessung `full-01`
+
+Messung vom 2.11.2026 23:36 bis 3.11.2026 01:41 am Netzteil, n = 1000 je Profil und Gruppe, alle
+12.000 Handshakes erfolgreich. Der vollständige Bericht steht in `data/processed/lab/full-01/report.md`.
+
+**Datenmenge:** Der hybride Handshake braucht in jeder Richtung ein Paket mehr.
+
+| Kennzahl | X25519 | X25519MLKEM768 | Differenz |
+|---|---:|---:|---:|
+| ClientHello | 512 Byte, 1 Paket | 1504 Byte, 2 Pakete | +992 Byte |
+| Server-Flight (TCP-Nutzdaten) | 3971 Byte, 3 Pakete | 5049 Byte, 4 Pakete | +1078 Byte |
+| Gesamte Verbindung (Frames) | 6373 Byte, 20 Pakete | 8707 Byte, 24 Pakete | +2334 Byte |
+
+**H1 ist für den Zeitanteil nach der festgelegten Regel nur teilweise bestätigt: In 3 von 4
+verlustfreien Profilen liegt das Intervall von Δ Median ganz in ±1 ms, in `kontrolle` nicht.**
+
+| Profil | Median X25519 | Δ Median (95-%-Intervall) | In ±1 ms |
+|---|---:|---:|---|
+| ideal (0 ms) | 5,74 ms | +0,21 ms [+0,17; +0,28] | ja |
+| europa (20 ms) | 26,03 ms | +0,52 ms [+0,41; +0,68] | ja |
+| uebersee (150 ms) | 168,07 ms | −0,08 ms [−0,58; +0,36] | ja |
+| kontrolle (100 ms) | 114,45 ms | +0,58 ms [+0,13; +1,05] | **nein** |
+
+Der Punktschätzer liegt in allen verlustfreien Profilen unter 1 ms. In `kontrolle` überschreitet nur
+die obere Intervallgrenze die Schwelle um 0,05 ms. Der Block hatte die höchste Ping-Streuung der
+verlustfreien Profile (mdev 4,2 ms gegen 1,6 bis 1,8 ms in `europa` und `uebersee`), das
+verbreitert das Intervall. Am Urteil ändert das nichts.
+
+**H2 ist bei 5 % Verlust bestätigt, bei 2 % nicht.**
+
+| Profil | Kontrast Mittelwert | Kontrast p95 | Verzögert X25519 / hybrid |
+|---|---:|---:|---:|
+| mobil (2 %) | +10,0 ms [−2,7; +26,2] | −8,5 ms [−96,0; +115,5] | 7,2 % / 8,7 % (p = 0,25) |
+| extrem (5 %) | +33,0 ms [+17,4; +48,8] | +123,4 ms [+21,2; +202,3] | 13,6 % / 21,2 % (p < 0,001) |
+
+Kontrast heißt Mehraufwand des Hybrids im Verlustprofil minus Mehraufwand in `kontrolle`. Der Median
+ändert sich in beiden Verlustprofilen kaum (Kontrast +0,04 ms und +0,29 ms), der Effekt liegt wie
+erwartet im Tail. Bei 2 % ist der Unterschied der verzögerten Anteile kleiner als im einfachen
+Modell vorhergesagt (7,8 % gegen 11,4 %), die Power reicht dafür nicht. Ein einzelner hybrider
+Handshake in `mobil` dauerte 5,9 s und zieht dort den Mittelwert hoch.
+
+Der Pilot hatte in `extrem` X25519 im Nachteil gezeigt. Die Vollmessung zeigt das Gegenteil, das
+stützt die Deutung als Zufall bei n = 20.
+
 ### Störfaktoren und Limitationen
 
 Laufende Liste, wird bei jeder Messreihe ergänzt.
@@ -168,11 +212,14 @@ Laufende Liste, wird bei jeder Messreihe ergänzt.
   Handshake rund 12 ms über der RTT. Die pcaps zeigen, dass das CPU-Zeit ist (Server rund 4,5 ms
   statt 0,5 ms, Client rund 5,5 ms statt 2,6 ms), der Server-Flight kommt in unter 0,1 ms an
   einem Stück an. Das trifft beide Gruppen gleich, die absoluten Dauern sind aber zu hoch.
-- netem-Timer haben auch nach der Kalibrierung rund 1–2 ms Streuung (Ping-mdev).
+- netem-Timer haben auch nach der Kalibrierung rund 1–2 ms Streuung (Ping-mdev). In `full-01`
+  lagen `kontrolle` und `extrem`, die als vierter und sechster Block liefen, bei rund 4 ms.
 - Hintergrundlast auf dem Mac lässt sich nicht ganz ausschließen. Die zufällige Verschachtelung
-  verteilt sie auf beide Gruppen. Während der Vollmessung sollte der Mac ungenutzt bleiben.
-- Die Pilotläufe liefen laut `pmset`-Log auf Akku, die Vollmessung läuft am Netzteil. Das
-  Delay wird pro Block neu kalibriert, die Zeiten des Piloten sind aber nicht direkt vergleichbar.
+  verteilt sie auf beide Gruppen. Während der Vollmessung sollte der Mac ungenutzt bleiben. Beim
+  Start von `full-01` waren noch Desktop-Apps offen (Load Average rund 2,4 bei 14 Kernen).
+- Die Pilotläufe liefen laut `pmset`-Log auf Akku, die Vollmessung lief laut `checks.csv` in allen
+  Blöcken am Netzteil. Das Delay wird pro Block neu kalibriert, die Zeiten des Piloten sind aber
+  nicht direkt vergleichbar.
 - Die Ergebnisse gelten für ARM64 und diese OpenSSL-Version. Andere CPUs liefern andere
   Millisekunden, vor allem für den Rechenanteil.
 
@@ -204,7 +251,7 @@ Laufende Liste, wird bei jeder Messreihe ergänzt.
 - Nur TCP mit cubic. HTTP/3 (QUIC) ist nicht untersucht.
 - Nur ein Server ohne Last. Der Rechenaufwand unter hoher Serverlast ist nicht Teil der Messung.
 
-### Verlauf der Pilotläufe
+### Verlauf der Messreihen
 
 | Messreihe | Zweck | Status |
 |---|---|---|
@@ -214,6 +261,7 @@ Laufende Liste, wird bei jeder Messreihe ergänzt.
 | `aux-clienthello` | ClientHello ohne `--tlsv1.3` | zeigt 2 Pakete |
 | `aborted-full-01` | Start der Vollmessung am 30.10.2026 | auf Wunsch nach rund 5 Minuten abgebrochen, weil der Mac gebraucht wurde. 430 Handshakes aus dem ersten Profil (`mobil`), ohne Serverlog und `checks.csv` nicht auswertbar. |
 | `pilot-03` | aktueller Aufbau | gültiger Pilot, n = 20 je Zelle. Dient nur der Funktionsprüfung. In `extrem` zeigt er X25519 mit 25 % gegen 5 % verzögerten Handshakes im Nachteil, das ist Zufall bei n = 20 (Fisher p = 0,18). |
+| `full-01` | Vollmessung, n = 1000 je Zelle, Commit `687188d` | gültig. Alle Blöcke am Netzteil, keine Fehlschläge, Ping-RTT höchstens 1,5 ms neben dem Soll. |
 
 ## Teil B: Feldstudie
 
