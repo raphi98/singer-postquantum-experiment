@@ -26,6 +26,46 @@ Beide Teile entstanden auf eigenen Branches (`teil-a-labor`, `teil-b-feldstudie`
 3.11.2026 nach `main` zusammengeführt. Teil A ist in diesem README dokumentiert, Teil B in
 `scan/README.md`. Beide haben eine Messreihe `full-01`, die Namen beziehen sich jeweils auf den Teil.
 
+## Warum so? Die wichtigsten Entscheidungen
+
+Kurzantworten auf die naheliegenden Rückfragen. Details stehen bei den Messentscheidungen der
+beiden Teile.
+
+### Was wird verglichen?
+
+| Frage | Antwort |
+|---|---|
+| Warum X25519MLKEM768? | Es ist die Post-Quanten-Schlüsselvereinbarung, die heute tatsächlich im Web läuft. Chrome (seit Version 131, 2024), Firefox und Safari (seit iOS/macOS 26) bieten sie standardmäßig an, Cloudflare, Akamai, AWS CloudFront und Google beenden sie, OpenSSL 3.5 schlägt sie als ersten Key-Share vor. Seit August 2026 ist sie als RFC 10024 (Proposed Standard, Code `0x11EC`) standardisiert. Für einen Vergleich, der die Praxis abbildet, gibt es keinen anderen Kandidaten. |
+| Warum hybrid und nicht reines ML-KEM? | ML-KEM (FIPS 203, August 2024) ist jung. Der Hybrid leitet den Sitzungsschlüssel aus X25519 **und** ML-KEM ab, ein Angreifer muss beide brechen. Fällt ML-KEM durch einen neuen Angriff, bleibt die klassische Sicherheit. Reines ML-KEM bietet kein Browser standardmäßig an. |
+| Warum ML-KEM-768 und nicht 512 oder 1024? | 768 entspricht NIST-Sicherheitskategorie 3 (etwa AES-192) und ist die von NIST und IETF empfohlene Standardstufe. 512 hat weniger Reserve, 1024 (z. B. `SecP384r1MLKEM1024`, für US-Behörden nach CNSA 2.0) ist größer und im Web kaum verbreitet. |
+| Warum nicht `SecP256r1MLKEM768` oder Kyber? | `SecP256r1MLKEM768` steht ebenfalls in RFC 10024, wird aber von keinem großen Browser zuerst angeboten. Der Vorgänger `X25519Kyber768Draft00` beruhte auf einem Entwurf vor FIPS 203 und wurde in den Browsern Ende 2024 durch X25519MLKEM768 ersetzt. HQC, FrodoKEM, Classic McEliece oder sntrup761 (OpenSSH) haben keinen TLS-Codepunkt im Browser. |
+| Warum X25519 als Vergleich? | X25519 ist die klassische Gruppe, die Browser seit Jahren zuerst anbieten, und genau die Hälfte des Hybrids. Der Unterschied zwischen beiden Gruppen ist damit nur der ML-KEM-Anteil. |
+| Warum nur die Schlüsselvereinbarung? | Sie schützt vor „jetzt speichern, später entschlüsseln“, der Bedrohung, die heute schon wirkt. Post-Quanten-Zertifikate (ML-DSA) gibt es im öffentlichen Web noch nicht, sie wären erst gegen aktive Angriffe mit einem Quantencomputer nötig. |
+| Warum TLS 1.3 und TCP, nicht QUIC? | Der Hybrid existiert nur in TLS 1.3. QUIC verpackt denselben Handshake anders (andere Paketgrenzen, eigene Verlusterkennung) und wäre ein eigenes Experiment. |
+
+### Teil A, Labor
+
+| Frage | Antwort |
+|---|---|
+| Warum ein Labor statt echter Server? | Nur dort lassen sich RTT und Verlust exakt einstellen und beide Gruppen unter identischen Bedingungen abwechselnd messen. Im Internet würden Routen, Last und CDN-Standorte den kleinen Effekt überdecken. |
+| Warum curl und OpenSSL 3.5.7? | OpenSSL 3.5 ist die erste LTS-Version mit ML-KEM. curl erzeugt mit jedem Aufruf einen vollständigen Handshake und misst ihn selbst (`time_appconnect`). Das macOS-curl (LibreSSL) kann kein ML-KEM, darum läuft alles im Container. |
+| Warum diese Netzprofile? | Ideal, Europa, Übersee, Mobil und Extrem waren vorgegeben. Die Kontrolle mit 100 ms ohne Verlust haben wir ergänzt, damit RTT- und Verlusteffekt getrennt bleiben. |
+| Warum 1000 Handshakes je Zelle? | Bei 5 % Verlust reicht das für rund 99 % Power, bei 2 % für rund 78 %, siehe Vorab festgelegte Auswertung. |
+| Warum Median **und** Tail? | Ohne Verlust zeigt der Median den Rechen- und Byteaufwand. Bei Verlust verlieren die meisten Handshakes nichts, der Nachteil steckt in den wenigen, die ein zusätzliches Paket verlieren. Darum Mittelwert, p95 und Anteil verzögerter Handshakes. |
+
+### Teil B, Feldstudie
+
+| Frage | Antwort |
+|---|---|
+| Warum Tranco als Grundlage? | Tranco ist eine öffentliche, für Forschung gebaute Rangliste aus mehreren Quellen über 30 Tage, schwer zu manipulieren und unter einer ID (`PYK6J`) dauerhaft abrufbar. Similarweb und Semrush sind kostenpflichtig, nicht reproduzierbar und für verschiedene Monate veröffentlicht. |
+| Warum diese fünf Branchen? | Banken, Behörden und Hochschulen übertragen Daten, die lange vertraulich bleiben müssen (Konten, Steuer, Gesundheit, Forschung), dort zählt „jetzt speichern, später entschlüsseln“ am meisten. Nachrichten und Onlineshops sind die meistbesuchten Kategorien und zeigen, was im Alltag ankommt. Die Mischung aus öffentlichen und kommerziellen Betreibern macht den Vergleich Branche gegen Hosting erst möglich. |
+| Warum in Österreich eine Zufallsstichprobe? | Tests setzen eine Zufallsauswahl voraus, und die Ergebnisse sollen für österreichische Websites allgemein gelten, nicht nur für die größten. |
+| Warum international die Top 10? | Für andere Länder gibt es keinen geprüften Rahmen wie `scan/frame.csv`, und Tausende Domains pro Land von Hand zu kategorisieren war nicht machbar. Die Top 10 nach Tranco sind eine feste, nachprüfbare Regel. Damit der Vergleich fair bleibt, wird auch Österreich dafür nach dieser Regel ausgewählt. |
+| Warum diese Regionen? | Sie folgen der Recherche in „Most websites.docx“ und decken die großen Internetmärkte mit unterschiedlichen Hosting-Landschaften ab: Europa und Nordamerika mit vielen globalen CDNs, Asien und Südostasien mit eigenen Anbietern. Afrika und Südamerika fehlen, weil die Recherche dort keine belastbaren Ranglisten fand. |
+| Warum nur Handshakes, kein HTTP? | Die Frage ist allein, welche Gruppe der Server verhandelt. Mehr Last als ein einzelner Seitenaufruf soll kein Host bekommen, und es werden nur öffentlich sichtbare Verbindungsparameter erhoben. |
+| Warum vier Handshakes pro Host? | Kontrolle (erreichbar?), nur Hybrid (unterstützt?) und beide Reihenfolgen (wählt der Server selbst oder folgt er dem Client?). Ein „nein“ zählt nur, wenn der Host nachweislich antwortet. |
+| Warum Hosting aus CNAME und ASN? | Wer TLS beendet, entscheidet über die Gruppe. Bei CDNs ist das der CDN-Rand, nicht der Server des Betreibers. CNAME geht vor, weil CDN-Knoten in fremden Netzen stehen können. |
+
 ## Teil A: Labor
 
 ### Aufbau
@@ -277,3 +317,18 @@ Hosts (54,5 %, 95-%-Intervall 45,7 % bis 63,1 %) unterstützen X25519MLKEM768.
 **H3 ist nach der festgelegten Regel nicht bestätigt.** Hosting ist der stärkere Faktor (Cramérs V
 0,55 gegen 0,41), die Branche hat bei festem Hosting aber einen eigenen Zusammenhang mit der
 Verbreitung (p = 0,012). Der vollständige Bericht steht in `data/processed/scan/full-01/report.md`.
+
+**Ergebnis des internationalen Scans `international-01`:** Scan am 8.11.2026, 339 Hosts. Von den
+191 auswertbaren Top-10-Hosts außerhalb Österreichs unterstützen 135 X25519MLKEM768 (70,7 %,
+95-%-Intervall 63,9 % bis 76,7 %). Nordamerika 84 %, Europa 76 %, Südostasien 67 %, Asien 54 %,
+Österreichs Top 10 ebenfalls 54 %.
+
+**H4 ist bestätigt.** Hinter CDN/Cloud unterstützen 85 % den Hybrid, auf eigenen oder generischen
+Servern 17 %, bei fester Region und Branche p < 0,001. Die Regionsunterschiede verschwinden bei
+festem Hosting (explorativ, p = 0,227).
+
+**H5 ist bestätigt, mit einer Einschränkung.** Alle 63 Akamai-Hosts folgen der Reihenfolge des
+Clients, 79 % der übrigen wählen den Hybrid selbst. Fastly verhält sich aber wie Akamai (14 von 14),
+was H5 nicht vorhergesagt hatte. Die Wiederholung der Zufallsstichprobe aus `full-01` ergab für
+121 von 122 Hosts dasselbe Ergebnis. Details in `scan/README.md`, Bericht in
+`data/processed/scan/international-01/report.md`.

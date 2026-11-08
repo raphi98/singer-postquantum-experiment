@@ -1,0 +1,6 @@
+test,p,odds_ratio,akamai_folgt,uebrige_server,merkmal,cramers_v,gehalten,statistik
+H4,9.999000099990002e-05,86.48809523809523,,,,,,
+H5,1.9709623262703815e-24,,1.0,0.7916666666666666,,,,
+Chi-Quadrat,0.003654794355258282,,,,region,0.2541723284881411,,
+Region bei festem Hosting (geschichtete Permutation),0.22747725227477253,,,,region,,hosting,19.734490610669706
+Hosting bei fester Region (geschichtete Permutation),9.999000099990002e-05,,,,hosting,,region,108.77174370310566
