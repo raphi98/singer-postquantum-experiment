@@ -1,0 +1,52 @@
+{
+  "name": "international-01",
+  "sites_file": "scan/sites_international.csv",
+  "git_commit": "0a0977d5d0bb7c2aaf9359e4839b6a26e806e3d4",
+  "started_utc": "2026-11-08T01:07:24+00:00",
+  "hosts": 339,
+  "probes": {
+    "kontrolle": [],
+    "nur_hybrid": [
+      "-tls1_3",
+      "-groups",
+      "X25519MLKEM768"
+    ],
+    "hybrid_zuerst": [
+      "-tls1_3",
+      "-groups",
+      "*X25519MLKEM768:*X25519"
+    ],
+    "klassisch_zuerst": [
+      "-tls1_3",
+      "-groups",
+      "*X25519:*X25519MLKEM768"
+    ]
+  },
+  "handshake_timeout_s": 12,
+  "min_seconds_per_host": 1.0,
+  "fallback_resolver": "1.1.1.1",
+  "versions": {
+    "openssl": "OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)",
+    "dig": "DiG 9.20.30-1~deb13u1-Debian",
+    "python": "3.13.5",
+    "debian": "13.7",
+    "kernel": "7.0.14-linuxkit"
+  },
+  "second_pass_hosts": [
+    "otto.de",
+    "ethz.ch",
+    "ccb.com",
+    "bihar.gov.in",
+    "karnataka.gov.in",
+    "gst.gov.in",
+    "thegioididong.com",
+    "dienmayxanh.com",
+    "kemensos.go.id",
+    "kemenag.go.id",
+    "gdt.gov.vn",
+    "kku.ac.th",
+    "register.gv.at",
+    "modul.ac.at"
+  ],
+  "finished_utc": "2026-11-08T01:31:43+00:00"
+}

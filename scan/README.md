@@ -213,12 +213,13 @@ Laufende Liste, wird bei jedem Scan ergänzt.
 | `full-01` | 122 Hosts aus `scan/sites.csv`, Commit `79fbc8e` | gültig, 2 Hosts im zweiten Durchgang (`register.gv.at`, `modul.ac.at`), beide ohne Änderung. |
 | `aborted-full-01` | erster Start des Vollscans | an der Vorabprüfung gescheitert: zwei Zeitüberschreitungen gegen `pq.cloudflareresearch.com` um 10:03. Kein Host wurde gescannt. Danach 12 von 12 Handshakes erfolgreich, die Ursache blieb ungeklärt. |
 | `pilot-02` | 17 Reserve-Hosts aus dem Protokoll, nicht Teil der Liste, `scan/sites_international_pilot.csv` | gültig, dient nur der Funktionsprüfung von DNS-Rückfall, neuem Feld `dns_resolver` und Auswertung. 24 s für 17 Hosts, kein zweiter Durchgang. |
-| `international-01` | Erweiterung, 339 Hosts aus `scan/sites_international.csv` | geplant, siehe unten |
+| `international-01` | Erweiterung, 339 Hosts aus `scan/sites_international.csv`, Commit `0a0977d` | gültig. Scan am 8.11.2026, 02:07 bis 02:31 Uhr, 24 Minuten. 14 Hosts im zweiten Durchgang, keiner mit geändertem Ergebnis. |
 
 ## Erweiterung: Internationaler Vergleich (`international-01`)
 
-**Stand: vorab festgelegt am 8.11.2026, vor dem Scan.** Nichts in diesem Abschnitt wird nach dem
-Scan an die Ergebnisse angepasst. Spätere Ergänzungen werden als solche gekennzeichnet.
+**Stand: vorab festgelegt am 8.11.2026, vor dem Scan (Commit `0a0977d`).** Bis einschließlich
+„Limitationen der Erweiterung“ wurde nach dem Scan nichts geändert, außer der tatsächlichen
+Scandauer. Das Ergebnis steht im eigenen Abschnitt danach.
 
 **Forschungsfrage:** Wie verbreitet ist Post-Quanten-TLS auf den meistbesuchten Websites in
 Europa, Nordamerika, Asien und Südostasien, und gilt der Hosting-Effekt aus Österreich auch dort?
@@ -311,7 +312,8 @@ python3 scan/run_scan.py --name international-01 --sites scan/sites_internationa
 .venv/bin/python analysis/analyze_international.py international-01
 ```
 
-Der Scan dauert schätzungsweise 15 bis 25 Minuten, weil viele Hosts weit entfernt sind. Er misst
+Der Scan dauerte 24 Minuten, vor allem wegen der Zeitüberschreitungen bei nicht erreichbaren
+Hosts in Asien (rund eine Minute pro Host, zweimal). Er misst
 keine Zeiten und darf laufen, während am Rechner gearbeitet wird. Heimnetz ohne VPN, wie bei
 `full-01`.
 
@@ -355,6 +357,117 @@ keine Zeiten und darf laufen, während am Rechner gearbeitet wird. Heimnetz ohne
 - Einige Hosts in Asien antworteten am 8.11.2026 aus Österreich nicht (Zeitüberschreitung). Sie
   bleiben in der Liste und erscheinen als `nicht_erreichbar`.
 - Afrika und Südamerika fehlen.
+
+## Ergebnis des Scans `international-01`
+
+**Nach dem Scan ergänzt.** Scan am 8.11.2026, 02:07 bis 02:31 Uhr, aus einem österreichischen
+Heimnetz. Der vollständige Bericht steht in `data/processed/scan/international-01/report.md`.
+
+### Überblick
+
+**135 von 191 auswertbaren internationalen Top-10-Hosts (70,7 %, 95-%-Intervall 63,9 % bis 76,7 %)
+unterstützen X25519MLKEM768.** 9 der 200 Hosts waren nicht auswertbar, alle in Asien und
+Südostasien.
+
+| Region (Top 10) | Anteil | 95-%-Intervall | CDN/Cloud |
+|---|---:|---:|---:|
+| Nordamerika | 42 von 50 (84 %) | 71 % bis 92 % | 47 von 50 |
+| Europa | 38 von 50 (76 %) | 63 % bis 86 % | 37 von 50 |
+| Südostasien | 30 von 45 (67 %) | 52 % bis 79 % | 31 von 45 |
+| Asien | 25 von 46 (54 %) | 40 % bis 68 % | 35 von 46 |
+| Österreich | 27 von 50 (54 %) | 40 % bis 67 % | 21 von 50 |
+
+Zum Vergleich die österreichische Zufallsstichprobe am selben Tag: 67 von 121 (55 %). In
+Österreich unterscheiden sich die meistbesuchten Websites also nicht von einer Zufallsauswahl.
+
+| Branche (Top 10, alle Regionen) | Anteil |
+|---|---:|
+| Onlineshops | 41 von 48 (85 %) |
+| Banken | 37 von 49 (76 %) |
+| Nachrichten | 36 von 50 (72 %) |
+| Behörden | 25 von 44 (57 %) |
+| Hochschulen | 23 von 50 (46 %) |
+
+### H4: bestätigt
+
+| | Anteil | 95-%-Intervall |
+|---|---:|---:|
+| CDN/Cloud | 128 von 150 (85 %) | 79 % bis 90 % |
+| Eigener/generischer Server | 7 von 41 (17 %) | 9 % bis 31 % |
+
+| Bedingung | Ergebnis | Erfüllt |
+|---|---|---|
+| Geschichteter Permutationstest, Schicht Region × Branche | p < 0,001 | ja |
+| Mantel-Haenszel-Odds-Ratio > 1 | 86,5 | ja |
+
+In jeder Region liegt CDN/Cloud vorn (Abbildung `figures/international-01/scan_int_h4_hosting`).
+Das Odds Ratio ist wegen vieler kleiner Schichten mit Nullzellen sehr unsicher, die Richtung ist
+eindeutig, die Höhe nicht interpretierbar. Aussagekräftiger sind die Anteile oben.
+
+Die 22 CDN-Hosts ohne Hybrid haben drei Ursachen:
+
+- **Nur TLS 1.2 eingeschaltet (6):** `elpais.com` und `lemonde.fr` bei Fastly, `mit.edu` und
+  `rakuten-bank.co.jp` bei Akamai, `stps.gob.mx` bei Microsoft, `xinhuanet.com` bei Baishan. Der
+  Anbieter könnte den Hybrid, der Kunde hat TLS 1.3 nicht aktiviert.
+- **TLS 1.3 ohne Hybrid (15):** vor allem chinesische Anbieter (Wangsu, Alibaba, Knownsec,
+  EdgeNext) mit 10 Hosts, dazu Automattic VIP (`harvard.edu`, `nasa.gov`), Netlify
+  (`stanford.edu`), `canada.ca` bei Akamai und `deped.gov.ph` bei Microsoft.
+- **Abbruch (1):** `otto.de` bei AWS, siehe unten.
+
+In Asien bringt „CDN“ deshalb weniger: 69 % gegen 87 bis 94 % in den anderen Regionen.
+
+### H5: bestätigt, mit einer Einschränkung
+
+| Anbieter | wählt den Hybrid selbst | folgt dem Client |
+|---|---:|---:|
+| Akamai | 0 | 63 |
+| Fastly | 0 | 14 |
+| Cloudflare | 18 | 0 |
+| AWS | 16 | 0 |
+| Imperva | 11 | 0 |
+| Google, Microsoft, Sucuri | 6 | 0 |
+| Eigener/generischer Server | 6 | 1 |
+
+| Bedingung | Ergebnis | Erfüllt |
+|---|---|---|
+| Fisher einseitig, Akamai folgt häufiger dem Client | p < 0,001 | ja |
+| Mehrheit der Akamai-Hosts folgt dem Client | 63 von 63 | ja |
+| Mehrheit der übrigen wählt den Hybrid selbst | 57 von 72 (79 %) | ja |
+
+**Einschränkung:** H5 nannte nur Akamai. Fastly verhält sich genauso, 14 von 14 Hosts folgen dem
+Client. Das stand schon in `full-01`: Die 4 Hosts aus „Andere CDN/Cloud“, die dem Client folgten
+(`wuestenrot.at`, `oe24.at`, `hornbach.at`, `myspreadshop.at`), liegen alle bei Fastly. Wir hatten
+es beim Formulieren der Hypothese übersehen. Die korrekte Aussage lautet also: **Bei Akamai und
+Fastly entscheidet der Client, bei allen anderen der Server.** Weil Browser den Hybrid zuerst
+anbieten, bekommen Browser-Nutzer ihn trotzdem. Ein älterer Client, der X25519 zuerst nennt,
+bekommt bei Akamai und Fastly dagegen klassisches TLS, obwohl der Server den Hybrid könnte. Das
+betrifft 77 von 135 internationalen Hosts mit Unterstützung.
+
+### Explorativ
+
+- **Region:** Die Regionen unterscheiden sich (Chi-Quadrat p = 0,004, Cramérs V 0,25). Bei
+  festgehaltenem Hosting verschwindet der Unterschied (geschichtete Permutation p = 0,227),
+  Hosting bei fester Region bleibt (p < 0,001). Der Rückstand Asiens und Österreichs geht also auf
+  den Hosting-Mix zurück, nicht auf die Region selbst. Belegt ist das nicht: Der Test war vorab nur
+  als explorativ geplant, und Region und Hosting überlappen stark.
+- **Wiederholung von `full-01`:** 121 von 122 Hosts haben nach neun Tagen dasselbe Ergebnis.
+  `fh-salzburg.ac.at` hat den Hybrid inzwischen eingeschaltet. Die Messung ist damit sehr stabil.
+- **Plattformen:** 7 von 8 unterstützen den Hybrid. Nur `wikipedia.org` nicht (TLS 1.3 ohne
+  Hybrid). `facebook.com` und `yahoo.com` auf eigenen Servern wählen ihn selbst.
+- **Großer ClientHello:** Die Kontrolle bietet wie ein Browser schon einen hybriden Key-Share an.
+  Kein Host, der überhaupt antwortete, ist daran gescheitert. Die drei `nein_abbruch`-Hosts
+  (`otto.de`, `ethz.ch`, `kku.ac.th`) akzeptieren diesen ClientHello und brechen nur ab, wenn
+  ausschließlich der Hybrid angeboten wird, statt mit einem Alert zu antworten. Die 8 nicht
+  erreichbaren Hosts scheitern schon beim TCP-Verbindungsaufbau (geprüft mit `nc` am 8.11.2026),
+  `ccb.com` an fehlender sicherer Renegotiation.
+- **Nur TLS 1.2:** 21 der 241 auswertbaren Top-10-Hosts, davon 8 in Asien.
+
+### Ergänzende Limitationen nach dem Scan
+
+- Die Klasse „Andere CDN/Cloud“ ist uneinheitlich: Imperva und Google wählen den Hybrid,
+  Fastly folgt dem Client, chinesische CDNs bieten ihn nicht an.
+- Die Hosting-Regeln für chinesische Anbieter beruhen auf CNAME-Mustern (`.365cyd.cn`,
+  `.bsgslb.cn`), die nur für diese Liste geprüft wurden.
 
 ## Offen
 
