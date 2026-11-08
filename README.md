@@ -9,6 +9,7 @@ Präsentation am 11.11.2026.
 |---|---|---|
 | A, Labor | Wie stark erhöht die hybride Schlüsselvereinbarung X25519MLKEM768 Handshake-Dauer und Datenmenge gegenüber X25519, besonders bei schlechtem Netz? | **H1:** Unter guten Bedingungen ist der Zeitaufwand kaum messbar, nur die Datenmenge steigt. **H2:** Bei Paketverlust wächst der Nachteil, weil der Handshake mehr Pakete braucht. |
 | B, Feldstudie | Wie verbreitet ist Post-Quanten-TLS auf österreichischen Websites, und hängt das eher von der Branche oder vom Hosting/CDN ab? | **H3:** Die Branche spielt wenig Rolle, der CDN-Anbieter eine große. |
+| B, Erweiterung | Wie verbreitet ist Post-Quanten-TLS auf den meistbesuchten Websites in Europa, Nordamerika, Asien und Südostasien, und gilt der Hosting-Effekt auch dort? | **H4:** Auch international unterstützen Websites hinter CDN/Cloud den Hybrid häufiger, bei gleicher Region und Branche. **H5:** Bei Akamai entscheidet der Client über den Hybrid, bei den übrigen Anbietern der Server. Vorab festgelegt in `scan/README.md`. |
 
 ## Repo-Struktur
 

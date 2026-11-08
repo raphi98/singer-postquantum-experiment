@@ -40,6 +40,10 @@ SECOND_PASS_RESULTS = {"dns_fehler", "nicht_erreichbar", "unklar", "nein_abbruch
 SECOND_PASS_PAUSE_S = 30
 PREFLIGHT_ATTEMPTS = 3
 PREFLIGHT_PAUSE_S = 20
+# Fragt nur, wenn der Resolver des Systems keine Adresse liefert. Seit international-01: Der
+# Provider-Resolver antwortet bei einzelnen Domains in Asien mit SERVFAIL, öffentliche Resolver
+# lösen sie auf. Ohne Rückfall stünden diese Hosts fälschlich als dns_fehler da.
+FALLBACK_RESOLVER = "1.1.1.1"
 
 PROBES = {
     "kontrolle": [],
@@ -50,7 +54,7 @@ PROBES = {
 
 HOST_FIELDS = [
     "started_utc", "scan_pass", "domain", "kategorie", "quelle", "scanned_host", "www_fallback", "ip", "addresses",
-    "cnames", "asn", "as_prefix", "as_country", "as_name", "tls_version", "pq_result", "preference",
+    "dns_resolver", "cnames", "asn", "as_prefix", "as_country", "as_name", "tls_version", "pq_result", "preference",
     "cert_verified", "inconsistent",
 ]
 PROBE_FIELDS = [
@@ -74,16 +78,24 @@ def run(command, timeout):
 
 
 def resolve(host):
-    """Löst einen Namen auf und gibt die CNAME-Kette und die IPv4-Adressen zurück."""
-    _, output = run(["dig", "+noall", "+answer", "+time=3", "+tries=2", "A", host], DNS_TIMEOUT_S)
-    cnames, addresses = [], []
-    for line in output.splitlines():
-        fields = line.split()
-        if len(fields) >= 5 and fields[3] == "CNAME":
-            cnames.append(fields[4].rstrip("."))
-        elif len(fields) >= 5 and fields[3] == "A":
-            addresses.append(fields[4])
-    return cnames, addresses
+    """Löst einen Namen auf und gibt die CNAME-Kette, die IPv4-Adressen und den Resolver zurück.
+
+    Zuerst der Resolver des Systems wie in full-01, nur ohne Antwort der Rückfall-Resolver.
+    """
+    for resolver in ("system", FALLBACK_RESOLVER):
+        server = [] if resolver == "system" else [f"@{resolver}"]
+        _, output = run(["dig", *server, "+noall", "+answer", "+time=3", "+tries=2", "A", host],
+                        DNS_TIMEOUT_S)
+        cnames, addresses = [], []
+        for line in output.splitlines():
+            fields = line.split()
+            if len(fields) >= 5 and fields[3] == "CNAME":
+                cnames.append(fields[4].rstrip("."))
+            elif len(fields) >= 5 and fields[3] == "A":
+                addresses.append(fields[4])
+        if addresses:
+            return cnames, addresses, resolver
+    return [], [], ""
 
 
 def txt_record(name):
@@ -157,10 +169,10 @@ def probe(domain, host, ip, name, writer):
 def choose_host(domain):
     """Bevorzugt www, weil Besucher dort landen. Die Domain ohne www ist die Rückfallebene."""
     for host in (f"www.{domain}", domain):
-        cnames, addresses = resolve(host)
+        cnames, addresses, resolver = resolve(host)
         if addresses:
-            return host, cnames, addresses
-    return None, [], []
+            return host, cnames, addresses, resolver
+    return None, [], [], ""
 
 
 def judge_support(control, hybrid):
@@ -192,7 +204,7 @@ def scan_host(site, writer):
     domain = site["domain"]
     result = {"started_utc": now_utc(), "domain": domain, "kategorie": site["kategorie"],
               "quelle": site["quelle"]}
-    host, cnames, addresses = choose_host(domain)
+    host, cnames, addresses, resolver = choose_host(domain)
     if host is None:
         return {**result, "pq_result": "dns_fehler"}
 
@@ -200,11 +212,11 @@ def scan_host(site, writer):
     control = probe(domain, host, ip, "kontrolle", writer)
     if control["status"] != "handshake_ok" and host.startswith("www."):
         # www existiert, antwortet aber nicht: Die Domain ohne www bekommt eine zweite Chance.
-        apex_cnames, apex_addresses = resolve(domain)
+        apex_cnames, apex_addresses, apex_resolver = resolve(domain)
         if apex_addresses:
             fallback = probe(domain, domain, apex_addresses[0], "kontrolle", writer)
             if fallback["status"] == "handshake_ok":
-                host, cnames, addresses = domain, apex_cnames, apex_addresses
+                host, cnames, addresses, resolver = domain, apex_cnames, apex_addresses, apex_resolver
                 ip, control = addresses[0], fallback
 
     support = "nicht_erreichbar"
@@ -220,7 +232,7 @@ def scan_host(site, writer):
     chose_hybrid = HYBRID in (hybrid_first["group"], classic_first["group"])
     return {
         **result, "scanned_host": host, "www_fallback": int(host == domain), "ip": ip,
-        "addresses": " ".join(addresses), "cnames": " ".join(cnames), **lookup_asn(ip),
+        "addresses": " ".join(addresses), "dns_resolver": resolver, "cnames": " ".join(cnames), **lookup_asn(ip),
         "tls_version": control.get("protocol", ""), "pq_result": support,
         "preference": judge_preference(support, hybrid_first, classic_first),
         "cert_verified": control.get("cert_verified", 0),
@@ -236,7 +248,7 @@ def preflight(writer):
     """
     host = "pq.cloudflareresearch.com"
     for _ in range(PREFLIGHT_ATTEMPTS):
-        _, addresses = resolve(host)
+        _, addresses, _ = resolve(host)
         if addresses:
             hybrid = probe("vorabpruefung", host, addresses[0], "nur_hybrid", writer)
             if hybrid["group"] == HYBRID and hybrid["cert_verified"]:
@@ -288,7 +300,8 @@ def main():
     manifest = {"name": args.name, "sites_file": args.sites, "git_commit": args.git_commit,
                 "started_utc": now_utc(), "hosts": len(sites), "probes": PROBES,
                 "handshake_timeout_s": HANDSHAKE_TIMEOUT_S,
-                "min_seconds_per_host": MIN_SECONDS_PER_HOST, "versions": tool_versions()}
+                "min_seconds_per_host": MIN_SECONDS_PER_HOST, "fallback_resolver": FALLBACK_RESOLVER,
+                "versions": tool_versions()}
 
     with open(out_dir / "probes.csv", "w", newline="", encoding="utf-8") as probes_file, \
             open(out_dir / "hosts.csv", "w", newline="", encoding="utf-8") as hosts_file:

@@ -212,6 +212,149 @@ Laufende Liste, wird bei jedem Scan ergänzt.
 | `pilot-01` | 20 Hosts, 4 je Kategorie, Seed 1 | gültig, dient nur der Funktionsprüfung. Gezogen vor der Korrektur der Altdomains, enthält daher `tuwien.ac.at`. Auswertung am 3.11.2026 mit dem aktuellen Skript neu erzeugt. |
 | `full-01` | 122 Hosts aus `scan/sites.csv`, Commit `79fbc8e` | gültig, 2 Hosts im zweiten Durchgang (`register.gv.at`, `modul.ac.at`), beide ohne Änderung. |
 | `aborted-full-01` | erster Start des Vollscans | an der Vorabprüfung gescheitert: zwei Zeitüberschreitungen gegen `pq.cloudflareresearch.com` um 10:03. Kein Host wurde gescannt. Danach 12 von 12 Handshakes erfolgreich, die Ursache blieb ungeklärt. |
+| `pilot-02` | 17 Reserve-Hosts aus dem Protokoll, nicht Teil der Liste, `scan/sites_international_pilot.csv` | gültig, dient nur der Funktionsprüfung von DNS-Rückfall, neuem Feld `dns_resolver` und Auswertung. 24 s für 17 Hosts, kein zweiter Durchgang. |
+| `international-01` | Erweiterung, 339 Hosts aus `scan/sites_international.csv` | geplant, siehe unten |
+
+## Erweiterung: Internationaler Vergleich (`international-01`)
+
+**Stand: vorab festgelegt am 8.11.2026, vor dem Scan.** Nichts in diesem Abschnitt wird nach dem
+Scan an die Ergebnisse angepasst. Spätere Ergänzungen werden als solche gekennzeichnet.
+
+**Forschungsfrage:** Wie verbreitet ist Post-Quanten-TLS auf den meistbesuchten Websites in
+Europa, Nordamerika, Asien und Südostasien, und gilt der Hosting-Effekt aus Österreich auch dort?
+
+| | Hypothese | Herkunft |
+|---|---|---|
+| **H4** | Auch außerhalb Österreichs unterstützen Websites hinter einem CDN- oder Cloud-Anbieter X25519MLKEM768 häufiger als Websites auf eigenen oder generischen Servern, und zwar bei gleicher Region und Branche. | `full-01`: 40 von 45 gegen 26 von 76. |
+| **H5** | Ob der Hybrid zustande kommt, entscheidet bei Akamai der Client, bei den übrigen Anbietern der Server: Akamai-Hosts übernehmen die Gruppenreihenfolge des Clients, die übrigen Hosts mit Unterstützung wählen den Hybrid auch dann, wenn der Client X25519 zuerst nennt. | `full-01`: 7 von 7 Akamai-Hosts folgen dem Client, 54 von 59 übrigen wählen selbst. |
+
+Beide Hypothesen stammen aus `full-01`. Bestätigend geprüft werden sie deshalb nur mit neuen,
+davon unabhängigen Daten: den 200 Top-10-Hosts außerhalb Österreichs.
+
+### Hostliste
+
+```bash
+python3 scan/build_international.py
+```
+
+Das Skript erzeugt `scan/sites_international.csv` (Scanliste) und `scan/international_protokoll.csv`
+(jeder geprüfte Kandidat mit Rang und Entscheidung). Es ist deterministisch, braucht nur die
+Tranco-Liste und schreibt bei gleichem Stand dieselbe Datei.
+
+| Teil | Hosts | Regel |
+|---|---:|---|
+| Top 10 international | 200 | 4 Regionen × 5 Branchen × 10 Domains, jeweils die besten Ränge in Tranco `PYK6J`. |
+| Top 10 Österreich | 50 | dieselbe Regel auf `scan/frame.csv`. 41 davon stehen schon in `scan/sites.csv`. |
+| Zufallsstichprobe Österreich | 122 | `scan/sites.csv` unverändert, Wiederholung von `full-01` am selben Tag. |
+| Plattformen | 8 | globale Dienste, die in mindestens zwei Länderlisten der Recherche stehen, eine Domain pro Konzern. Nur beschreibend. |
+
+Zusammen 339 verschiedene Hosts. Jede Domain steht nur einmal in der Liste, die Spalte `auswahl`
+zeigt, zu welchen Teilen sie gehört.
+
+- **Regionen:** Europa ohne Österreich (EU/EWR, GB, CH), Nordamerika (US, CA, MX), Asien (Ost- und
+  Südasien), Südostasien (ASEAN). Zugeordnet wird nach dem Markt der Domain, wie beim
+  `.at`-Rahmen: `amazon.co.uk` gehört zu Europa, `amazon.com` zu Nordamerika.
+- **Branchenkriterien** wie im österreichischen Rahmen. Behörden und Hochschulen über Endungen
+  (`.gov`, `.gov.uk`, `.gouv.fr`, `.go.jp`, `.ac.uk`, `.edu`, `.edu.cn` usw., Liste in
+  `build_international.py`), Nachrichten, Onlineshops und Banken aus dem Kandidatenpool
+  `scan/international_kandidaten.csv`.
+- **Höchstens eine Domain pro Marke und Region** (`amazon.de`/`amazon.fr`, `shopee.*`,
+  `bbc.com`/`bbc.co.uk`). Eigene Online-Banking-Domains zählen separat, wie in Österreich.
+- **Höchstens 4 Domains pro Land und Zelle.** Ohne diese Grenze bestünde Europa fast nur aus GB und
+  DE, Asien aus Indien und China, Nordamerika nur aus den USA.
+- **Ausschlüsse mit Begründung** stehen in `AUSSCHLUSS` im Skript und im Protokoll, etwa
+  `academia.edu` (keine Hochschule) oder `beian.gov.cn` (keine öffentliche Adresse).
+- **Hauptadresse:** `onlinesbi.sbi` leitet auf `onlinesbi.sbi.bank.in` um, gescannt wird die neue
+  Adresse. Indische Banken sind auf `.bank.in` umgezogen.
+
+**Warum Top 10 statt Zufall?** Für die anderen Regionen gibt es keinen geprüften Rahmen wie
+`scan/frame.csv`, und das Team hat keine Zeit, Tausende Domains pro Land zu kategorisieren. Die
+Top 10 sind eine feste, nachprüfbare Regel. Die Aussagen gelten damit für die meistbesuchten
+Websites, nicht für alle Websites einer Region. Deshalb wird Österreich für den Regionsvergleich
+mit derselben Regel ausgewählt und nicht mit der Zufallsstichprobe verglichen.
+
+### Prüfung der Liste aus „Most websites.docx“
+
+Die Recherche ist die Grundlage des Kandidatenpools. Für den Scan wurde sie so angepasst:
+
+| Problem | Beispiele | Lösung |
+|---|---|---|
+| Keine Branche, sondern Behörde oder Portal | `acesso.gov.br`, `turkiye.gov.tr` und `mynet.com` unter Banken | entfernt |
+| Kein Kreditinstitut | `finanzen.net`, `gold.de`, `durchblicker.at`, `wise.com`, `cash.app` | entfernt, Kriterium wie in Österreich |
+| Falsche Region | `wise.com` unter Südostasien, `turkiye.gov.tr` unter Europa, `walmart.com` und `ozon.ru` unter Europa | nach Markt zugeordnet bzw. entfernt |
+| Dieselbe Website in mehreren Regionen | `kompas.com`, `vnexpress.net`, `nus.edu.sg`, `amazon.com`, `temu.com` | je einmal. `temu.com` fehlt ganz, der Betreiber sitzt je nach Lesart in China, Irland oder den USA. |
+| Keine Hauptadresse | `news.yahoo.co.jp` (Subdomain), `franceinfo.fr` (leitet auf `francetvinfo.fr`), `california.gov` (→ `ca.gov`), `threads.net` | Hauptadresse bzw. Endungsregel |
+| Kein B2C-Shop nach dem Kriterium aus Österreich | `leboncoin.fr`, `willhaben.at`, `idealo.at`, `geizhals.at`, `ebay.*` | entfernt |
+| Ungleich viele Einträge pro Zelle | Europa/Banken 4, Südostasien/Banken 1, Afrika nur Behörden | feste Regel mit 10 pro Zelle |
+| Länderliste Russland | `gosuslugi.ru`, `ozon.ru` | nicht aufgenommen, liegt außerhalb der Regionen und ist aus der EU teils gesperrt |
+| Afrika | nur 5 Behörden-Portale, ohne Rangquelle | nicht aufgenommen, siehe Limitationen |
+
+Die Rangfolgen aus Similarweb und Semrush sind nicht frei abrufbar und stammen aus verschiedenen
+Monaten. Sortiert wird deshalb nach Tranco, wie in Österreich.
+
+### Messentscheidungen
+
+| Entscheidung | Begründung |
+|---|---|
+| Rückfall-Resolver `1.1.1.1`, nur wenn der Resolver des Systems keine Adresse liefert | Der Provider-Resolver antwortete am 8.11.2026 bei `gst.gov.in` und `moe.gov.my` mit SERVFAIL, `1.1.1.1` löste beide auf. Ohne Rückfall wären das Messfehler des Heimnetzes. Wer geantwortet hat, steht in `hosts.csv` (`dns_resolver`). Für alle anderen Hosts ändert sich nichts gegenüber `full-01`. |
+| Hosting-Regeln vor dem Scan ergänzt | Internationale CDNs wie Wangsu, Alibaba, Baishan, EdgeNext, CDN77, Sucuri, Automattic VIP und Netlify. Grundlage waren nur DNS und ASN der Liste, keine Scan-Ergebnisse. `full-01` und `pilot-01` ändern sich dadurch nicht (geprüft). |
+| Österreichische Zufallsstichprobe wird mitgescannt | Gleicher Tag wie die übrigen Hosts, und der Abgleich mit `full-01` zeigt, wie stabil die Ergebnisse nach neun Tagen sind. |
+| Gescannt wird aus Österreich | CDNs antworten vom nächsten Standort. Gemessen wird also, was ein Besucher aus Österreich bekommt. |
+
+### Reproduzieren
+
+```bash
+python3 scan/run_scan.py --name international-01 --sites scan/sites_international.csv
+```
+
+```bash
+.venv/bin/python analysis/analyze_international.py international-01
+```
+
+Der Scan dauert schätzungsweise 15 bis 25 Minuten, weil viele Hosts weit entfernt sind. Er misst
+keine Zeiten und darf laufen, während am Rechner gearbeitet wird. Heimnetz ohne VPN, wie bei
+`full-01`.
+
+### Vorab festgelegte Auswertung
+
+- **Gültige Hosts** wie bisher: `ja` gegen alle `nein*`. `unklar`, `nicht_erreichbar` und
+  `dns_fehler` fallen heraus und werden pro Region berichtet.
+- **CDN/Cloud** heißt Hosting-Klasse Cloudflare, Akamai, AWS oder Andere CDN/Cloud.
+- **H4 gilt**, wenn bei den Top-10-Hosts außerhalb Österreichs (a) der geschichtete
+  Permutationstest für CDN/Cloud mit der Schicht Region × Branche p < 0,05 ergibt (10.000
+  Permutationen, Seed 20261111) und (b) das gepoolte Mantel-Haenszel-Odds-Ratio größer als 1 ist.
+  Die Schicht Region × Branche verhindert, dass ein Branchen- oder Regionseffekt als
+  Hosting-Effekt erscheint, das Problem aus H3.
+- **H5 gilt**, wenn bei den Top-10-Hosts außerhalb Österreichs mit Unterstützung und eindeutiger
+  Präferenz (a) der einseitige exakte Fisher-Test „Akamai folgt häufiger dem Client als die
+  übrigen“ p < 0,05 ergibt, (b) mehr als die Hälfte der Akamai-Hosts dem Client folgt und (c) mehr
+  als die Hälfte der übrigen Hosts den Hybrid selbst wählt.
+- **Explorativ, ohne Hypothese:** PQ-Anteile je Region mit Wilson-Intervall, Österreich mit den
+  eigenen Top 10. Test der Region (Chi-Quadrat bzw. Fisher-Freeman-Halton) und geschichtete
+  Permutation Region bei festem Hosting. Dazu die Plattformen und der Abgleich mit `full-01`.
+- **Erwartete Trennschärfe:** Simuliert mit den Anteilen aus `full-01` und dem Hosting-Mix der
+  Liste (nur DNS/ASN, 3.000 Durchgänge). H4 wird dann in praktisch allen Durchgängen bestätigt,
+  auch wenn Akamai nur zu 60 % unterstützt und eigene Server halb so oft wie in Österreich. Ein
+  Regionsunterschied wäre nur in rund 35 bis 55 % der Durchgänge nachweisbar, deshalb ist er keine
+  Hypothese. Eine Hypothese „Server wählt meist selbst“ wurde verworfen: Rund ein Drittel der
+  Liste liegt bei Akamai, das dem Client folgt.
+
+### Limitationen der Erweiterung
+
+- Top 10 statt Zufallsauswahl: Die Tests behandeln die Hosts wie eine Stichprobe, die Liste ist
+  aber eine bewusste Auswahl der populärsten Websites.
+- Tranco misst weltweite Popularität. Regionale Favoriten mit wenig internationalem Verkehr fehlen,
+  globale Konzerne sind überrepräsentiert.
+- Der Kandidatenpool für Nachrichten, Shops und Banken ist von Hand zusammengestellt. Was nicht im
+  Pool steht, kann nicht gewählt werden. Behörden und Hochschulen folgen Endungsregeln, die nicht
+  jedes Land gleich gut abdecken (deutsche Bundesbehörden nutzen oft `.de`).
+- Tranco bewertet auch eingebettete Domains hoch, etwa `nist.gov` (Zeitdienst) oder `miit.gov.cn`
+  (ICP-Registrierung im Fuß jeder chinesischen Website).
+- Dieselben Konzerne tauchen in mehreren Regionen auf (`amazon.com`, `amazon.co.uk`,
+  `amazon.co.jp`). Ihre Hosts sind nicht unabhängig.
+- Einige Hosts in Asien antworteten am 8.11.2026 aus Österreich nicht (Zeitüberschreitung). Sie
+  bleiben in der Liste und erscheinen als `nicht_erreichbar`.
+- Afrika und Südamerika fehlen.
 
 ## Offen
 
