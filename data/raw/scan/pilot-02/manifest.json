@@ -1,0 +1,37 @@
+{
+  "name": "pilot-02",
+  "sites_file": "scan/sites_international_pilot.csv",
+  "git_commit": "688df8072ea234962815ee637fbddce781568ee3",
+  "started_utc": "2026-11-08T00:56:14+00:00",
+  "hosts": 17,
+  "probes": {
+    "kontrolle": [],
+    "nur_hybrid": [
+      "-tls1_3",
+      "-groups",
+      "X25519MLKEM768"
+    ],
+    "hybrid_zuerst": [
+      "-tls1_3",
+      "-groups",
+      "*X25519MLKEM768:*X25519"
+    ],
+    "klassisch_zuerst": [
+      "-tls1_3",
+      "-groups",
+      "*X25519:*X25519MLKEM768"
+    ]
+  },
+  "handshake_timeout_s": 12,
+  "min_seconds_per_host": 1.0,
+  "fallback_resolver": "1.1.1.1",
+  "versions": {
+    "openssl": "OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)",
+    "dig": "DiG 9.20.30-1~deb13u1-Debian",
+    "python": "3.13.5",
+    "debian": "13.7",
+    "kernel": "7.0.14-linuxkit"
+  },
+  "second_pass_hosts": [],
+  "finished_utc": "2026-11-08T00:56:38+00:00"
+}

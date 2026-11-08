@@ -1,0 +1,6 @@
+test,p,odds_ratio,akamai_folgt,uebrige_server,merkmal,cramers_v,gehalten,statistik
+H4,1.0,inf,,,,,,
+H5,0.011904761904761904,,1.0,1.0,,,,
+Fisher-Freeman-Halton,0.7435,,,,region,0.355512150128359,,
+Region bei festem Hosting (geschichtete Permutation),1.0,,,,region,,hosting,4.916666666666668
+Hosting bei fester Region (geschichtete Permutation),0.4036596340365963,,,,hosting,,region,14.333333333333332
