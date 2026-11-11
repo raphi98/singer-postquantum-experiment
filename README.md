@@ -332,3 +332,56 @@ Clients, 79 % der übrigen wählen den Hybrid selbst. Fastly verhält sich aber 
 was H5 nicht vorhergesagt hatte. Die Wiederholung der Zufallsstichprobe aus `full-01` ergab für
 121 von 122 Hosts dasselbe Ergebnis. Details in `scan/README.md`, Bericht in
 `data/processed/scan/international-01/report.md`.
+
+## Quellen
+
+Alle Links wurden am 11.11.2026 geöffnet und gegen unsere Aussagen geprüft, außer wo es anders
+vermerkt ist.
+
+### Verfahren und Standards
+
+| Quelle | Belegt |
+|---|---|
+| NIST: [FIPS 203, Module-Lattice-Based Key-Encapsulation Mechanism Standard](https://csrc.nist.gov/pubs/fips/203/final), 13.8.2024 | ML-KEM mit den Parametersätzen 512, 768 und 1024. ML-KEM-768 hat Sicherheitskategorie 3. Größen in Abschnitt 8, Tabelle 3: Encapsulation Key 1184 Byte, Ciphertext 1088 Byte. |
+| K. Kwiatkowski, P. Kampanakis, B. E. Westerbaan, D. Stebila: [RFC 10024, Post-Quantum Traditional (PQ/T) Hybrid Key Agreement Mechanisms for TLS 1.3](https://www.rfc-editor.org/info/rfc10024), 2026, Proposed Standard | X25519MLKEM768 (`0x11EC`), SecP256r1MLKEM768 (`0x11EB`), SecP384r1MLKEM1024 (`0x11ED`) |
+| IANA: [TLS Supported Groups](https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml) | Wert 4588 (`0x11EC`) ist X25519MLKEM768, als empfohlen markiert |
+| E. Rescorla: [RFC 8446, The Transport Layer Security (TLS) Protocol Version 1.3](https://www.rfc-editor.org/info/rfc8446), August 2018 | TLS 1.3 |
+| A. Langley, M. Hamburg, S. Turner: [RFC 7748, Elliptic Curves for Security](https://www.rfc-editor.org/info/rfc7748), Januar 2016 | X25519 |
+| NIST: [NIST Report Provides Guidelines for Transition to Post-Quantum Cryptography Standards](https://www.nist.gov/news-events/news/2026/10/nist-report-provides-guidelines-transition-post-quantum-cryptography), 27.10.2026, zu NIST IR 8547 | „Jetzt speichern, später entschlüsseln“ ist ein Hauptgrund, warum die Umstellung dringend ist |
+| NSA: [Pressemitteilung zu CNSA 2.0](https://www.nsa.gov/Press-Room/Press-Releases-Statements/Press-Release-View/Article/3148990/), September 2022 | ML-KEM-1024 für US-Behörden. **Nicht geprüft**, die Seite antwortete am 11.11.2026 mit HTTP 403. |
+
+### Software und Anbieter
+
+| Quelle | Belegt |
+|---|---|
+| D. Adrian, D. Benjamin, B. Beck, D. O'Brien (Google): [A new path for Kyber on the web](https://security.googleblog.com/2024/09/a-new-path-for-kyber-on-web.html), 13.9.2024 | Chrome wechselt mit Version 131 von Kyber auf ML-KEM, Codepunkt `0x11EC` statt `0x6399` |
+| Mozilla: [PostQuantumKeyAgreementEnabled, Firefox administrator reference](https://firefox-admin-docs.mozilla.org/reference/policies/postquantumkeyagreementenabled/) | Firefox bietet X25519 + ML-KEM-768 standardmäßig an |
+| Apple: [Prepare your network for quantum-secure encryption in TLS](https://support.apple.com/en-us/122756), 18.6.2026 | iOS 26, iPadOS 26, macOS Tahoe 26 und visionOS 26 bieten X25519MLKEM768 standardmäßig an |
+| OpenSSL: [OpenSSL 3.5 Series Release Notes](https://openssl-library.org/news/openssl-3.5-notes) und [OpenSSL 3.5 Final Release - Live](https://openssl-library.org/post/2025-04-08-openssl-35-final-release), 8.4.2025 | ML-KEM-Unterstützung, X25519MLKEM768 als Standard-Key-Share, 3.5 ist eine LTS-Version |
+| Cloudflare: [PQC in Cloudflare products](https://developers.cloudflare.com/ssl/post-quantum-cryptography/pqc-cloudflare-products/) | Verbindung Besucher zu Cloudflare mit X25519MLKEM768 |
+| Akamai: [Future-Proofing the Internet: Akamai Achieves End-to-End PQC](https://www.akamai.com/blog/security/2026/aug/future-proofing-internet-akamai-achieves-end-to-end-pqc), 19.8.2026 | Client zu Akamai seit August 2026 allgemein verfügbar und standardmäßig an (Enhanced TLS) |
+| AWS: [AWS Support for Post-Quantum Confidentiality](https://aws.amazon.com/security/post-quantum-cryptography/aws-pq-readiness-confidentiality/) | CloudFront bevorzugt den hybriden Schlüsselaustausch zwischen Client und CloudFront |
+
+### Auswahl der Websites
+
+| Quelle | Belegt |
+|---|---|
+| V. Le Pochat, T. Van Goethem, S. Tajalizadehkhoob, M. Korczyński, W. Joosen: Tranco: A Research-Oriented Top Sites Ranking Hardened Against Manipulation. NDSS 2019, [doi:10.14722/ndss.2019.23386](https://doi.org/10.14722/ndss.2019.23386) | Tranco als manipulationsresistente Forschungsrangliste |
+| [Tranco-Liste PYK6J](https://tranco-list.eu/list/PYK6J/1000000) | erstellt am 29.10.2026, Zeitraum 30.9. bis 29.10.2026, aus Crux, Farsight, Majestic, Radar und Umbrella |
+
+Die Rankings der Vorrecherche stehen in `Most websites.docx`. Sie lieferten nur Kandidaten für
+Nachrichten, Onlineshops und Banken außerhalb Österreichs, gereiht wurde nach Tranco. Diese Links
+haben wir nicht erneut geprüft:
+
+- Semrush: [Trending Websites Österreich](https://www.semrush.com/trending-websites/at/all), [Banking Österreich](https://www.semrush.com/trending-websites/at/banking), [Übersicht nach Land und Branche](https://www.semrush.com/trending-websites/)
+- Exploding Topics: [Banking weltweit](https://analytics.explodingtopics.com/website/global/banking)
+- OneLittleWeb: [Popular Websites](https://onelittleweb.com/digital-market-intelligence/popular-websites/), [Government and Public Services](https://onelittleweb.com/digital-market-intelligence/popular-websites/government-and-public-services/)
+- Similarweb: [Meistbesuchte Websites USA](https://www.similarweb.com/blog/research/market-research/most-visited-websites-usa/), [Nachrichten weltweit](https://www.similarweb.com/top-websites/news-and-media/), [Nachrichten Deutschland](https://www.similarweb.com/top-websites/germany/news-and-media/), [Nachrichten Kanada](https://www.similarweb.com/top-websites/canada/news-and-media/), [Shopping weltweit](https://www.similarweb.com/top-websites/e-commerce-and-shopping/), [Shopping Österreich](https://www.similarweb.com/top-websites/austria/e-commerce-and-shopping/), [Behörden-Trends](https://www.similarweb.com/de/top-websites/law-and-government/trending/), [Hochschulen weltweit](https://www.similarweb.com/top-websites/science-and-education/universities-and-colleges/trending/), [Hochschulen Österreich](https://www.similarweb.com/top-websites/austria/science-and-education/universities-and-colleges/trending/)
+- ACPM: [Website-Besuche Frankreich](https://www.acpm.fr/classements/pr-united-web-sites-gp)
+- diemedien.at: [Österreichs größte Online- und Nachrichtenportale](https://www.diemedien.at/articles/osterreichs-grosste-onlineportale-und-nachrichtenportale)
+- Times Higher Education: [Asia University Rankings 2026](https://www.timeshighereducation.com/world-university-rankings/2026/regional-ranking)
+
+### Noch ohne Beleg
+
+- Der Monat August 2026 für RFC 10024: Die RFC-Seite nennt nur das Jahr 2026.
+- Dass Google den Hybrid auf seinen Servern anbietet (Abschnitt „Warum X25519MLKEM768?“).
